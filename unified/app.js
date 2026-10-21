@@ -71,17 +71,19 @@
   function comparison(){const chosen=offers.filter(o=>selected.has(o.id));return `<a class="back" href="#projects">${t('back')}</a><section class="intro compare-intro"><h1>${t('comparison')} · ${chosen.length}</h1><p>${t('comparisonLead')}</p></section>
     ${chosen.length?`<section class="compare-grid" data-count="${chosen.length}" aria-label="${t('comparison')}">${chosen.map(comparisonCard).join('')}</section><p class="comparison-note">${t('note')}</p>`:`<section class="empty"><h2>${t('emptyTitle')}</h2><p>${t('emptyText')}</p><a class="button primary" href="#projects">${t('choose')}</a></section>`}`;}
   function render(){
+    // The unfinished profile is temporarily hidden, including previously saved links.
+    if(location.hash==='#home')history.replaceState(null,'','#projects');
     const target=location.hash.startsWith('#project=')?decodeURIComponent(location.hash.slice(9)):null;
     if(known.has(target)){projectId=target;district=districtKey(offers.find(o=>o.id===projectId));persist();history.replaceState(null,'','#projects');}
     const page=location.hash==='#compare'?'compare':location.hash==='#home'?'home':'projects';
     document.documentElement.lang=language;
     const active=offers.find(o=>o.id===projectId);
     document.querySelector('.brand').innerHTML=`<strong>${t('profile')}</strong><span>${t('homeBroker')}</span>`;
-    document.querySelector('.brand').setAttribute('aria-label',t('home'));
+    document.querySelector('.brand').setAttribute('aria-label',t('catalog'));
     document.querySelectorAll('[data-language]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.language===language)));
     document.querySelectorAll('[data-currency]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.currency===currency)));
     document.querySelector('[data-language]').parentElement.setAttribute('aria-label',t('language'));document.querySelector('[data-currency]').parentElement.setAttribute('aria-label',t('currency'));
-    document.getElementById('primary-nav').innerHTML=[['home',t('home')],['projects',t('catalog')],['compare',(language==='ru'?'Сравнение':'Compare')+' · '+selected.size]].map(([key,label])=>`<a href="#${key}"${key===page?' aria-current="page"':''}>${label}</a>`).join('');
+    document.getElementById('primary-nav').innerHTML=[['projects',t('catalog')],['compare',(language==='ru'?'Сравнение':'Compare')+' · '+selected.size]].map(([key,label])=>`<a href="#${key}"${key===page?' aria-current="page"':''}>${label}</a>`).join('');
     if(page==='projects'&&mounted?.id===projectId&&main.querySelector('#active-offer')){
       main.querySelector('.project-picker').outerHTML=picker();
       const b=main.querySelector('.selected-project-tools button');b.dataset.select=projectId;b.setAttribute('aria-pressed',String(selected.has(projectId)));b.textContent=selected.has(projectId)?(language==='ru'?'✓ В сравнении':'✓ Selected'):(language==='ru'?'В сравнение':'Compare');
