@@ -91,6 +91,16 @@
     "nearbyNote": {
       "ru": "Время в пути — ориентиры из брошюры проекта.",
       "en": "Indicative travel times from the project brochure."
+    },
+    "handover": {
+      "label": {
+        "ru": "Плановая сдача",
+        "en": "Planned handover"
+      },
+      "value": {
+        "ru": "II кв. 2029",
+        "en": "Q2 2029"
+      }
     }
   },
   "currency": {
@@ -224,16 +234,6 @@
           "value": {
             "ru": "704 / 7 этаж",
             "en": "704 / 7th floor"
-          }
-        },
-        {
-          "label": {
-            "ru": "Плановая сдача",
-            "en": "Planned handover"
-          },
-          "value": {
-            "ru": "II кв. 2029",
-            "en": "Q2 2029"
           }
         }
       ],
@@ -659,16 +659,6 @@
           "value": {
             "ru": "512 / 5 этаж",
             "en": "512 / 5th floor"
-          }
-        },
-        {
-          "label": {
-            "ru": "Плановая сдача",
-            "en": "Planned handover"
-          },
-          "value": {
-            "ru": "II кв. 2029",
-            "en": "Q2 2029"
           }
         }
       ],
@@ -1104,6 +1094,9 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
 .viewer-nav:hover{background:var(--white)}
 @media(max-width:760px){.viewer-bar{min-height:65px}.viewer-heading .viewer-title{font-size:10px}.viewer-counter{font-size:9px}.viewer-prev{left:5px}.viewer-next{right:5px}.viewer-nav{height:50px}}
 
+
+.project-counts{flex-wrap:wrap}.project-counts span{white-space:nowrap}
+@media(max-width:760px){.facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head><body>
 <p id="template-status" class="page" role="status">Шаблон не заполнен. Данные нового предложения добавляет помощник по рабочему промпту.</p>
 <noscript><p class="page">Для просмотра предложения включите JavaScript. / Enable JavaScript to view the offer.</p></noscript>
@@ -1173,9 +1166,9 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   function renderGallery() {document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
   function about() {
     const p=data.project, aside=el('aside','project-aside');aside.setAttribute('aria-label',t('about'));const copy=el('div','project-copy');
-    if(p.counts.length || p.amenities.length || local(p.amenitiesNote)) {
+    if(p.counts.length || p.amenities.length || local(p.amenitiesNote) || local(p.handover?.value)) {
       copy.append(el('h2','copy-heading',t('project')));
-      if(p.counts.length) {const counts=el('div','project-counts');p.counts.forEach(value=>counts.append(el('span','',local(value))));copy.append(counts);}
+      if(p.counts.length || local(p.handover?.value)) {const counts=el('div','project-counts');p.counts.forEach(value=>counts.append(el('span','',local(value))));if(local(p.handover?.value)){const handover=el('span','project-handover-inline',(language==='ru'?'Сдача: ':'Handover: ')+local(p.handover.value));handover.setAttribute('aria-label',local(p.handover.label)+': '+local(p.handover.value));handover.title=local(p.handover.label)+': '+local(p.handover.value);counts.append(handover);}copy.append(counts);}
       if(p.amenities.length) {const list=el('ul','amenities');list.setAttribute('aria-label',t('amenities'));p.amenities.forEach(value=>list.append(el('li','',local(value))));copy.append(list);}
       if(local(p.amenitiesNote))copy.append(el('p','source-note',local(p.amenitiesNote)));
     }
