@@ -95,6 +95,16 @@
     "nearbyNote": {
       "ru": "Время в пути — ориентиры из брошюры проекта.",
       "en": "Indicative travel times from the project brochure."
+    },
+    "handover": {
+      "label": {
+        "ru": "Плановая сдача",
+        "en": "Planned handover"
+      },
+      "value": {
+        "ru": "IV кв. 2028",
+        "en": "Q4 2028"
+      }
     }
   },
   "currency": {
@@ -250,16 +260,6 @@
           "value": {
             "ru": "414 / 4 этаж",
             "en": "414 / 4th floor"
-          }
-        },
-        {
-          "label": {
-            "ru": "Плановая сдача",
-            "en": "Planned completion"
-          },
-          "value": {
-            "ru": "IV кв. 2028",
-            "en": "Q4 2028"
           }
         }
       ],
@@ -640,16 +640,6 @@
             "ru": "520 / 5 этаж",
             "en": "520 / 5th floor"
           }
-        },
-        {
-          "label": {
-            "ru": "Плановая сдача",
-            "en": "Planned completion"
-          },
-          "value": {
-            "ru": "IV кв. 2028",
-            "en": "Q4 2028"
-          }
         }
       ],
       "view": {
@@ -1028,16 +1018,6 @@
           "value": {
             "ru": "303 / 3 этаж",
             "en": "303 / 3rd floor"
-          }
-        },
-        {
-          "label": {
-            "ru": "Плановая сдача",
-            "en": "Planned completion"
-          },
-          "value": {
-            "ru": "IV кв. 2028",
-            "en": "Q4 2028"
           }
         }
       ],
@@ -1427,6 +1407,10 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
 .viewer-nav:hover{background:var(--white)}
 @media(max-width:760px){.viewer-bar{min-height:65px}.viewer-heading .viewer-title{font-size:10px}.viewer-counter{font-size:9px}.viewer-prev{left:5px}.viewer-next{right:5px}.viewer-nav{height:50px}}
 
+
+/* Компактная плановая сдача: общий блок проекта, без четвёртого факта квартиры. */
+.project-counts{flex-wrap:wrap}.project-counts span{white-space:nowrap}
+@media(max-width:760px){.facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
 </style></head><body>
 <p id="template-status" class="page" role="status">Шаблон не заполнен. Данные нового предложения добавляет помощник по рабочему промпту.</p>
 <noscript><p class="page">Для просмотра предложения включите JavaScript. / Enable JavaScript to view the offer.</p></noscript>
@@ -1455,6 +1439,10 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   const locationReady = data.map ? Boolean(mapURL(data.map.embedUrl) && mapURL(data.map.link)) : data.mapOmittedByRequest === true;
   // Принадлежность и точность выделения проверяются по исходным схемам до сборки.
   const floorSelectionReady = u => {const p=u.plans?.floor,s=p?.selection;return Boolean(p && asset(p.src) && s && s.unitId===u.id && ['source','svg'].includes(s.method) && (s.method!=='svg' || p.src.toLowerCase().endsWith('.svg')));};
+  // Стандарт v9: общий срок находится только в project.handover, не в фактах отдельных квартир.
+  const unitHasLegacyHandover = u => (u.facts || []).some(f => ['handover','completion'].includes(f.key) || (typeof f.label === 'string' ? [f.label] : Object.values(f.label || {})).some(label => /^(плановая сдача|срок сдачи|плановый срок сдачи|planned completion|planned handover|completion|handover)$/i.test(String(label).trim())));
+  const handoverPresentationReady = data.units.every(u => !unitHasLegacyHandover(u));
+  if (!handoverPresentationReady) {status.textContent='Внутренняя проверка: перенесите подтверждённый общий срок из фактов квартир в project.handover и проверьте блок «О проекте».';return;}
   const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src))) && data.units.every(floorSelectionReady);
   if (!ready || !locationReady) return;
   status.hidden = true; main.hidden = false;
@@ -1498,9 +1486,9 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   function renderGallery() {document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
   function about() {
     const p=data.project, aside=el('aside','project-aside');aside.setAttribute('aria-label',t('about'));const copy=el('div','project-copy');
-    if(p.counts.length || p.amenities.length || local(p.amenitiesNote)) {
+    if(p.counts.length || p.amenities.length || local(p.amenitiesNote) || local(p.handover?.value)) {
       copy.append(el('h2','copy-heading',t('project')));
-      if(p.counts.length) {const counts=el('div','project-counts');p.counts.forEach(value=>counts.append(el('span','',local(value))));copy.append(counts);}
+      if(p.counts.length || local(p.handover?.value)) {const counts=el('div','project-counts');p.counts.forEach(value=>counts.append(el('span','',local(value))));if(local(p.handover?.value)){const handover=el('span','project-handover-inline',(language==='ru'?'Сдача: ':'Handover: ')+local(p.handover.value));handover.setAttribute('aria-label',local(p.handover.label)+': '+local(p.handover.value));handover.title=local(p.handover.label)+': '+local(p.handover.value);counts.append(handover);}copy.append(counts);}
       if(p.amenities.length) {const list=el('ul','amenities');list.setAttribute('aria-label',t('amenities'));p.amenities.forEach(value=>list.append(el('li','',local(value))));copy.append(list);}
       if(local(p.amenitiesNote))copy.append(el('p','source-note',local(p.amenitiesNote)));
     }
