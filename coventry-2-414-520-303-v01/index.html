@@ -290,24 +290,28 @@
           }
         },
         "floor": {
-          "src": "images/typical-floor.webp",
+          "src": "images/floor-414.svg",
           "caption": {
             "ru": "Квартира 414 · схема типового этажа",
             "en": "Apartment 414 · typical-floor layout"
           },
           "alt": {
-            "ru": "Типовой план этажей 2–15; позиция 14",
-            "en": "Typical layout for floors 2–15; position 14"
+            "ru": "План этажа: контур, стрелка и номер выделяют квартиру 414",
+            "en": "Floor plan: outline, arrow and number identify apartment 414"
           },
           "width": 2470,
           "height": 2281,
           "note": {
-            "ru": "Этажи 2–15. Квартира 414 — позиция 14.",
-            "en": "Floors 2–15. Apartment 414 is position 14."
+            "ru": "Выделена квартира 414.",
+            "en": "Apartment 414 is highlighted."
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "414",
+            "method": "svg"
           }
         }
       },
@@ -675,24 +679,28 @@
           }
         },
         "floor": {
-          "src": "images/typical-floor.webp",
+          "src": "images/floor-520.svg",
           "caption": {
             "ru": "Квартира 520 · схема типового этажа",
             "en": "Apartment 520 · typical-floor layout"
           },
           "alt": {
-            "ru": "Типовой план этажей 2–15; позиция 20",
-            "en": "Typical layout for floors 2–15; position 20"
+            "ru": "План этажа: контур, стрелка и номер выделяют квартиру 520",
+            "en": "Floor plan: outline, arrow and number identify apartment 520"
           },
           "width": 2470,
           "height": 2281,
           "note": {
-            "ru": "Этажи 2–15. Квартира 520 — позиция 20.",
-            "en": "Floors 2–15. Apartment 520 is position 20."
+            "ru": "Выделена квартира 520.",
+            "en": "Apartment 520 is highlighted."
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "520",
+            "method": "svg"
           }
         }
       },
@@ -1060,24 +1068,28 @@
           }
         },
         "floor": {
-          "src": "images/typical-floor.webp",
+          "src": "images/floor-303.svg",
           "caption": {
             "ru": "Квартира 303 · схема типового этажа",
             "en": "Apartment 303 · typical-floor layout"
           },
           "alt": {
-            "ru": "Типовой план этажей 2–15; позиция 03",
-            "en": "Typical layout for floors 2–15; position 03"
+            "ru": "План этажа: контур, стрелка и номер выделяют квартиру 303",
+            "en": "Floor plan: outline, arrow and number identify apartment 303"
           },
           "width": 2470,
           "height": 2281,
           "note": {
-            "ru": "Этажи 2–15. Квартира 303 — позиция 03.",
-            "en": "Floors 2–15. Apartment 303 is position 03."
+            "ru": "Выделена квартира 303.",
+            "en": "Apartment 303 is highlighted."
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "303",
+            "method": "svg"
           }
         }
       },
@@ -1441,7 +1453,9 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   const mapURL = value => {try {const url = new URL(value); return url.protocol === 'https:' && ['google.com','www.google.com','maps.google.com','maps.app.goo.gl'].includes(url.hostname) && url;} catch {return false;}};
   // Пустая карта допустима только по прямому указанию Александра; принадлежность точки проверяется по источникам до сборки.
   const locationReady = data.map ? Boolean(mapURL(data.map.embedUrl) && mapURL(data.map.link)) : data.mapOmittedByRequest === true;
-  const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src)));
+  // Принадлежность и точность выделения проверяются по исходным схемам до сборки.
+  const floorSelectionReady = u => {const p=u.plans?.floor,s=p?.selection;return Boolean(p && asset(p.src) && s && s.unitId===u.id && ['source','svg'].includes(s.method) && (s.method!=='svg' || p.src.toLowerCase().endsWith('.svg')));};
+  const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src))) && data.units.every(floorSelectionReady);
   if (!ready || !locationReady) return;
   status.hidden = true; main.hidden = false;
   function el(tag, className, value) {const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node;}

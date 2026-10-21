@@ -278,6 +278,10 @@
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "704",
+            "method": "source"
           }
         }
       },
@@ -703,6 +707,10 @@
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "512",
+            "method": "source"
           }
         }
       },
@@ -1123,7 +1131,9 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   const mapURL = value => {try {const url = new URL(value); return url.protocol === 'https:' && ['google.com','www.google.com','maps.google.com','maps.app.goo.gl'].includes(url.hostname) && url;} catch {return false;}};
   // Пустая карта допустима только по прямому указанию Александра; принадлежность точки проверяется по источникам до сборки.
   const locationReady = data.map ? Boolean(mapURL(data.map.embedUrl) && mapURL(data.map.link)) : data.mapOmittedByRequest === true;
-  const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src)));
+  // Принадлежность и точность выделения проверяются по исходным схемам до сборки.
+  const floorSelectionReady = u => {const p=u.plans?.floor,s=p?.selection;return Boolean(p && asset(p.src) && s && s.unitId===u.id && ['source','svg'].includes(s.method) && (s.method!=='svg' || p.src.toLowerCase().endsWith('.svg')));};
+  const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src))) && data.units.every(floorSelectionReady);
   if (!ready || !locationReady) return;
   status.hidden = true; main.hidden = false;
   function el(tag, className, value) {const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node;}

@@ -294,24 +294,28 @@
           }
         },
         "floor": {
-          "src": "images/typical-floor.webp",
+          "src": "images/floor-731.svg",
           "caption": {
             "ru": "Квартира 731 · схема типового этажа",
             "en": "Apartment 731 · typical-floor layout"
           },
           "alt": {
-            "ru": "Типовой план этажей 2–8; позиция 31",
-            "en": "Typical layout for floors 2–8; position 31"
+            "ru": "План этажа: контур, стрелка и номер выделяют квартиру 731",
+            "en": "Floor plan: outline, arrow and number identify apartment 731"
           },
           "width": 2400,
           "height": 1686,
           "note": {
-            "ru": "Этажи 2–8. Квартира 731 — позиция 31.",
-            "en": "Floors 2–8. Apartment 731 is position 31."
+            "ru": "Выделена квартира 731.",
+            "en": "Apartment 731 is highlighted."
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "731",
+            "method": "svg"
           }
         }
       },
@@ -787,24 +791,28 @@
           }
         },
         "floor": {
-          "src": "images/typical-floor.webp",
+          "src": "images/floor-802.svg",
           "caption": {
             "ru": "Квартира 802 · схема типового этажа",
             "en": "Apartment 802 · typical-floor layout"
           },
           "alt": {
-            "ru": "Типовой план этажей 2–8; позиция 02",
-            "en": "Typical layout for floors 2–8; position 02"
+            "ru": "План этажа: контур, стрелка и номер выделяют квартиру 802",
+            "en": "Floor plan: outline, arrow and number identify apartment 802"
           },
           "width": 2400,
           "height": 1686,
           "note": {
-            "ru": "Этажи 2–8. Квартира 802 — позиция 02.",
-            "en": "Floors 2–8. Apartment 802 is position 02."
+            "ru": "Выделена квартира 802.",
+            "en": "Apartment 802 is highlighted."
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "802",
+            "method": "svg"
           }
         }
       },
@@ -1280,24 +1288,28 @@
           }
         },
         "floor": {
-          "src": "images/typical-floor.webp",
+          "src": "images/floor-320.svg",
           "caption": {
             "ru": "Квартира 320 · схема типового этажа",
             "en": "Apartment 320 · typical-floor layout"
           },
           "alt": {
-            "ru": "Типовой план этажей 2–8; позиция 20",
-            "en": "Typical layout for floors 2–8; position 20"
+            "ru": "План этажа: контур, стрелка и номер выделяют квартиру 320",
+            "en": "Floor plan: outline, arrow and number identify apartment 320"
           },
           "width": 2400,
           "height": 1686,
           "note": {
-            "ru": "Этажи 2–8. Квартира 320 — позиция 20.",
-            "en": "Floors 2–8. Apartment 320 is position 20."
+            "ru": "Выделена квартира 320.",
+            "en": "Apartment 320 is highlighted."
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
             "en": "Location plan; availability is not shown."
+          },
+          "selection": {
+            "unitId": "320",
+            "method": "svg"
           }
         }
       },
@@ -1766,7 +1778,9 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   const AED_PER_USD = 3.66;
   const asset = src => typeof src === 'string' && /^images\/[a-zA-Z0-9_./-]+$/.test(src) && !src.split('/').includes('..');
   const mapURL = value => {try {const url = new URL(value); return url.protocol === 'https:' && ['google.com','www.google.com','maps.google.com','maps.app.goo.gl'].includes(url.hostname) && url;} catch {return false;}};
-  const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src)));
+  // Принадлежность и точность выделения проверяются по исходным схемам до сборки.
+  const floorSelectionReady = u => {const p=u.plans?.floor,s=p?.selection;return Boolean(p && asset(p.src) && s && s.unitId===u.id && ['source','svg'].includes(s.method) && (s.method!=='svg' || p.src.toLowerCase().endsWith('.svg')));};
+  const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src))) && data.units.every(floorSelectionReady);
   if (!ready) return;
   status.hidden = true; main.hidden = false;
   function el(tag, className, value) {const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node;}
