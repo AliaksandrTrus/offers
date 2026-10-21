@@ -93,7 +93,9 @@
       "en": "Indicative travel times from the project brochure."
     }
   },
-  "currency": {"base": "AED"},
+  "currency": {
+    "base": "AED"
+  },
   "gallery": [
     {
       "src": "images/hero.webp",
@@ -1045,7 +1047,15 @@
       }
     }
   ],
-  "map": null
+  "map": {
+    "embedUrl": "https://www.google.com/maps?q=25.026001%2C55.192634&z=15&output=embed",
+    "link": "https://maps.app.goo.gl/8ipUwbpzq9N5Uu467",
+    "title": {
+      "ru": "Расположение Lawncrest",
+      "en": "Lawncrest location"
+    }
+  },
+  "mapOmittedByRequest": false
 }
 </script>
 <style>
@@ -1118,8 +1128,10 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   const AED_PER_USD = 3.66;
   const asset = src => typeof src === 'string' && /^images\/[a-zA-Z0-9_./-]+$/.test(src) && !src.split('/').includes('..');
   const mapURL = value => {try {const url = new URL(value); return url.protocol === 'https:' && ['google.com','www.google.com','maps.google.com','maps.app.goo.gl'].includes(url.hostname) && url;} catch {return false;}};
+  // Пустая карта допустима только по прямому указанию Александра; принадлежность точки проверяется по источникам до сборки.
+  const locationReady = data.map ? Boolean(mapURL(data.map.embedUrl) && mapURL(data.map.link)) : data.mapOmittedByRequest === true;
   const ready = data.schemaVersion === 1 && data.project.name.trim() && data.currency.base === 'AED' && data.gallery.length && data.gallery.every(p => asset(p.src)) && data.units.length && data.units.every(u => u.id && isMoney(u.price) && Object.values(u.plans || {}).every(p => !p || asset(p.src)));
-  if (!ready) return;
+  if (!ready || !locationReady) return;
   status.hidden = true; main.hidden = false;
   function el(tag, className, value) {const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node;}
   function button(className, label, action) {const node = el('button', className, label); node.type='button'; if(action) node.addEventListener('click', action); return node;}
@@ -1214,7 +1226,7 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   function renderUnit() {scheduleOpen=document.querySelector('details.schedule')?.open ?? scheduleOpen;document.getElementById('apartments').replaceWith(units());document.getElementById('payments').replaceWith(payments());}
   function map() {
     const m=data.map;if(!m || !mapURL(m.embedUrl) || !mapURL(m.link))return null;
-    const node=el('section','location-card bottom-location');node.id='location';node.setAttribute('aria-labelledby','location-title');const head=el('div','map-head'), title=el('h2','',t('location'));title.id='location-title';const link=el('a','map-link','Google Maps ');link.href=m.link;link.target='_blank';link.rel='noopener noreferrer';const arrow=el('span','','↗');arrow.setAttribute('aria-hidden','true');link.append(arrow);head.append(title,link);
+    const node=el('section','location-card bottom-location');node.id='location';node.setAttribute('aria-labelledby','location-title');const head=el('div','map-head'), title=el('h2','',t('location'));title.id='location-title';const link=el('a','map-link',(language==='ru'?'Открыть в Google Maps':'Open in Google Maps')+' ');link.href=m.link;link.target='_blank';link.rel='noopener noreferrer';const arrow=el('span','','↗');arrow.setAttribute('aria-hidden','true');link.append(arrow);head.append(title,link);
     const frame=el('div','map-frame'), iframe=el('iframe'), url=mapURL(m.embedUrl);url.searchParams.set('hl',language);iframe.title=local(m.title)||t('location');iframe.src=url.href;iframe.loading='eager';iframe.allowFullscreen=true;iframe.referrerPolicy='no-referrer-when-downgrade';frame.append(iframe);node.append(head,frame);return node;
   }
   function render() {
