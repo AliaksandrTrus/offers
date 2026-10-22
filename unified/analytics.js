@@ -18,9 +18,9 @@
   choice=read();
   function remember(value){try{localStorage.setItem(KEY,JSON.stringify({version:1,choice:value,at:Date.now()}));return true;}catch{return false;}}
   function safeRef(raw){try{const u=new URL(raw);return /^https?:$/.test(u.protocol)?u.origin+'/':'';}catch{return '';}}
-  function pageURL(ctx){const u=new URL(base);u.search=campaigns.toString();u.hash=ctx.page==='compare'?'compare':'project='+ctx.project_id;return u.href;}
+  function pageURL(ctx){const u=new URL(base);u.search=campaigns.toString();u.hash=ctx.page==='compare'?'compare':ctx.page==='catalog'?'projects':'project='+ctx.project_id;return u.href;}
   function params(extra={}){
-    const p={project_id:context?.page==='projects'?context.project_id:'comparison',unit_id:context?.unit_id||'',section_id:'',action:'',...extra};
+    const p={project_id:context?.page==='projects'?context.project_id:context?.page==='catalog'?'catalog':'comparison',unit_id:context?.unit_id||'',section_id:'',action:'',...extra};
     // All custom values originate in confirmed IDs or a fixed action vocabulary.
     return Object.fromEntries(Object.entries(p).filter(([k,v])=>['project_id','unit_id','section_id','action','photo_index','view_context','plan_type','comparison_count'].includes(k)&&['string','number'].includes(typeof v)));
   }
@@ -39,11 +39,11 @@
   }
   function sendView(){
     if(choice!=='granted'||!loaded||!context)return;
-    const key=context.page==='compare'?'compare':'projects:'+context.project_id;
+    const key=context.page==='compare'?'compare':context.page==='catalog'?'catalog':'projects:'+context.project_id;
     if(lastView===key)return;
     const url=pageURL(context),ref=previousLocation||safeRef(document.referrer);
     window.gtag('set',{page_location:url,page_title:context.title,page_referrer:ref});
-    window.gtag('event','page_view',{...params({section_id:context.page==='compare'?'comparison':'project',action:'view'}),page_location:url,page_title:context.title,page_referrer:ref,send_to:ID,...(debug?{debug_mode:true}:{})});
+    window.gtag('event','page_view',{...params({section_id:context.page==='compare'?'comparison':context.page==='catalog'?'catalog':'project',action:'view'}),page_location:url,page_title:context.title,page_referrer:ref,send_to:ID,...(debug?{debug_mode:true}:{})});
     lastView=key;previousLocation=url;
   }
   function cancelTimers(){for(const h of timers.values())clearTimeout(h);timers.clear();}
@@ -73,7 +73,7 @@
   }
   function view(ctx){
     language=ctx.language||language;
-    const key=ctx.page==='compare'?'compare':'projects:'+ctx.project_id;
+    const key=ctx.page==='compare'?'compare':ctx.page==='catalog'?'catalog':'projects:'+ctx.project_id;
     if(key!==sectionKey){sectionKey=key;seen.clear();cancelTimers();}
     context=ctx;updateConsentText();sendView();
     if(choice==='granted'&&!loaded)boot();
