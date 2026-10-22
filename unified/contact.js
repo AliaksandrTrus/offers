@@ -1,0 +1,36 @@
+// Local proposal. Contact links work without analytics consent; never send messages.
+(() => {
+  'use strict';
+  if(window.OfferContact)return;
+  const standaloneTag=document.querySelector('meta[name="offer-contact-url"]');
+  if(standaloneTag&&!/^https:\/\//.test(standaloneTag.content))return;
+  const PUBLIC=standaloneTag?.content||'https://aliaksandrtrus.github.io/offers/unified/';
+  const WA='https://wa.me/971585892414',TG='https://t.me/aliaksandr_dubai';
+  let context=null,opener=null,lastClick=null,placement='bottom_bar',intent='question';
+  const bar=document.getElementById('selection-bar');
+  const dialog=document.createElement('dialog');dialog.id='contact-dialog';dialog.className='contact-dialog';dialog.setAttribute('aria-labelledby','contact-title');dialog.setAttribute('aria-describedby','contact-description');
+  dialog.innerHTML='<div class="contact-heading"><h2 id="contact-title"></h2><button type="button" class="contact-close" aria-label="Закрыть">×</button></div><p class="contact-context" id="contact-context"></p><p id="contact-description"></p><div class="contact-channels"><a data-contact-channel="whatsapp" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">WhatsApp <span aria-hidden="true">↗</span></a><a data-contact-channel="telegram" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Telegram <span aria-hidden="true">↗</span></a></div>';
+  document.body.append(dialog);
+  const wa=dialog.querySelector('[data-contact-channel="whatsapp"]'),tg=dialog.querySelector('[data-contact-channel="telegram"]');tg.href=TG;
+  const words={ru:{discountTitle:'Узнать о скидке',questionTitle:'Задать вопрос',discountBody:'Напишите Александру — уточните возможность скидки или более выгодных условий.',questionBody:'Выберите удобный мессенджер — Александр ответит на ваши вопросы.',close:'Закрыть окно связи',unit:'Квартира',empty:'Проекты ещё не выбраны'},en:{discountTitle:'Ask about a discount',questionTitle:'Ask a question',discountBody:'Message Alexander to ask whether a discount or better purchase terms may be available.',questionBody:'Choose your preferred messenger — Alexander will answer your questions.',close:'Close contact options',unit:'Apartment',empty:'No projects selected yet'}};
+  const language=()=>context?.language==='en'?'en':'ru';
+  function publicLink(){const u=new URL(PUBLIC);if(context?.page==='projects'&&!standaloneTag)u.hash='project='+context.project_id;return u.href;}
+  function draft(){
+    const en=language()==='en';
+    if(context.page==='projects')return (intent==='discount'?(en?`Alexander, hello! I’m interested in ${context.projectName}, apartment ${context.unit_id}. Could I get a discount or better purchase terms?`:`Александр, здравствуйте! Интересует ${context.projectName}, квартира ${context.unit_id}. Можно ли получить скидку или более выгодные условия?`):(en?`Alexander, hello! I have a question about project ${context.projectName}, apartment ${context.unit_id}.`:`Александр, здравствуйте! У меня вопрос по проекту ${context.projectName}, квартире ${context.unit_id}.`))+'\n'+publicLink();
+    if(context.page==='compare'){const names=context.selectedProjects.map(o=>o.name).join(', ');return (names?(en?`Alexander, hello! I have a question about these selected projects: ${names}.`:`Александр, здравствуйте! У меня вопрос по выбранным проектам: ${names}.`):(en?'Alexander, hello! I have a question about comparing projects.':'Александр, здравствуйте! У меня вопрос по сравнению проектов.'))+'\n'+PUBLIC;}
+    return (en?'Alexander, hello! I have a question about projects and apartment options.':'Александр, здравствуйте! У меня вопрос по проектам и вариантам квартир.')+'\n'+PUBLIC;
+  }
+  function fill(){if(!context)return;const w=words[language()];dialog.querySelector('#contact-title').textContent=intent==='discount'?w.discountTitle:w.questionTitle;dialog.querySelector('#contact-description').textContent=intent==='discount'?w.discountBody:w.questionBody;dialog.querySelector('.contact-close').setAttribute('aria-label',w.close);dialog.querySelector('#contact-context').textContent=context.page==='projects'?context.projectName+' · '+w.unit+' '+context.unit_id:context.page==='compare'?(context.selectedProjects.map(o=>o.name).join(' · ')||w.empty):'';const u=new URL(WA);u.searchParams.set('text',draft());wa.href=u.href;}
+  function event(name,extra={}){try{window.OfferAnalytics?.event(name,{project_id:context.project_id,unit_id:context.page==='projects'?context.unit_id:'',section_id:'contact',contact_placement:placement,contact_intent:intent,action:name==='contact_open'?'open':'messenger_redirect',...(context.page==='compare'?{comparison_count:context.selectedProjects.length}:{}),...extra});}catch{}}
+  function overlay(){document.dispatchEvent(new CustomEvent('offer:overlay-change'));}
+  function open(button,source='bottom_bar',purpose='question'){if(!context||dialog.open||document.body.classList.contains('viewer-open'))return;opener=button;const discount=context.page==='projects'&&source==='unit_price'&&purpose==='discount';placement=discount?'unit_price':'bottom_bar';intent=discount?'discount':'question';lastClick=null;fill();dialog.showModal();document.body.classList.add('contact-open');overlay();dialog.querySelector('.contact-close').focus({preventScroll:true});event('contact_open');}
+  document.addEventListener('click',e=>{const button=e.target.closest('[data-contact-open]');if(button)open(button);});
+  dialog.querySelector('.contact-close').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.close();});
+  dialog.addEventListener('close',()=>{document.body.classList.remove('contact-open');overlay();const target=opener?.isConnected?opener:document.querySelector('[data-contact-open]');target?.focus({preventScroll:true});opener=null;});
+  dialog.addEventListener('keydown',e=>{if(e.key!=='Tab')return;const controls=[dialog.querySelector('.contact-close'),wa,tg],index=controls.indexOf(document.activeElement);if(e.shiftKey&&index<=0){e.preventDefault();tg.focus();}else if(!e.shiftKey&&index===controls.length-1){e.preventDefault();controls[0].focus();}});
+  dialog.addEventListener('click',e=>{const link=e.target.closest('[data-contact-channel]');if(!link)return;const channel=link.dataset.contactChannel;if(!['whatsapp','telegram'].includes(channel))return;const key=context.page+':'+context.project_id+':'+context.unit_id+':'+channel,now=Date.now();if(lastClick?.key===key&&now-lastClick.at<700){e.preventDefault();return;}lastClick={key,at:now};event('contact_click',{channel});dialog.close();});
+  const resize=new ResizeObserver(()=>{const height=bar.getBoundingClientRect().height;document.documentElement.style.setProperty('--selection-bar-height',Math.ceil(height)+'px');});resize.observe(bar);
+  window.OfferContact={open,update(next){const changed=context&&(context.page!==next.page||context.project_id!==next.project_id||context.unit_id!==next.unit_id);if(changed&&dialog.open)dialog.close();context=next;fill();},unit(id){if(context?.page==='projects'){if(dialog.open)dialog.close();context.unit_id=id;fill();}}};
+})();

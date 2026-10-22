@@ -73,6 +73,7 @@
     <div class="compare-units"><p class="units-heading">${t('represented')} · ${o.data.units.length}</p><div class="units">${o.data.units.map(unit).join('')}</div></div><div class="offer-bottom">${offerLink(o)}</div></article>`;}
   function comparison(){const chosen=offers.filter(o=>selected.has(o.id));return `<a class="back" href="#projects">${t('back')}</a><section class="intro compare-intro"><h1>${t('comparison')} · ${chosen.length}</h1><p>${t('comparisonLead')}</p></section>
     ${chosen.length?`<section class="compare-grid" data-count="${chosen.length}" aria-label="${t('comparison')}">${chosen.map(comparisonCard).join('')}</section><p class="comparison-note">${t('note')}</p>`:`<section class="empty"><h2>${t('emptyTitle')}</h2><p>${t('emptyText')}</p><a class="button primary" href="#projects">${t('choose')}</a></section>`}`;}
+  function syncContact(page){window.OfferContact?.update({page,language,project_id:page==='projects'?projectId:page==='compare'?'comparison':'catalog',projectName:page==='projects'?projectName(offers.find(o=>o.id===projectId)):'',unit_id:page==='projects'?(unitChoice[projectId]||offers.find(o=>o.id===projectId).data.units[0].id):'',selectedProjects:offers.filter(o=>selected.has(o.id)).map(o=>({id:o.id,name:projectName(o)}))});}
   function render(){
     // A plain shared URL always opens all projects, regardless of a saved selection.
     if(['#home','#catalog'].includes(location.hash))history.replaceState(null,'','#projects');
@@ -96,16 +97,17 @@
       mounted?.dispose();mounted=null;
       main.innerHTML=page==='projects'?projectView():page==='compare'?`<div class="comparison">${comparison()}</div>`:catalogView();
       if(page==='projects'){
-        mounted=window.mountLocalOffer({host:document.getElementById('active-offer'),offer:active,language,currency,unitId:unitChoice[projectId],onUnit:id=>{unitChoice[projectId]=id;persist();}});mounted.id=projectId;
+        mounted=window.mountLocalOffer({host:document.getElementById('active-offer'),offer:active,language,currency,unitId:unitChoice[projectId],onUnit:id=>{unitChoice[projectId]=id;persist();window.OfferContact?.unit(id);}});mounted.id=projectId;
       }
     }
     bar.hidden=page==='home';bar.setAttribute('aria-label',t('selection'));
-    bar.innerHTML=`<div class="selection-text"><strong>${t('projects')}: ${selected.size}</strong><span>${memoryOnly?(language==='ru'?'В текущей вкладке':'In this tab'):t('selectionHint')}</span></div><div class="bar-actions"><button class="text-button" data-clear${selected.size?'':' disabled'}>${t('clear')}</button><a class="button primary" data-compare href="#compare">${t('compare')} · ${selected.size}</a></div>`;
+    bar.innerHTML=`<div class="selection-text"><strong>${t('projects')}: ${selected.size}</strong><span>${memoryOnly?(language==='ru'?'В текущей вкладке':'In this tab'):t('selectionHint')}</span></div><div class="bar-actions"><button class="button contact-trigger" type="button" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog"><span class="contact-desktop-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span><span class="contact-mobile-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span></button>${selected.size?`<button class="text-button" data-clear>${t('clear')}</button>`:''}<a class="button primary" data-compare href="#compare">${t('compare')} · ${selected.size}</a></div>`;
     const notice=document.getElementById('storage-notice');notice.textContent=unknownProject?t('unknownProject'):memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');notice.classList.toggle('warning',memoryOnly||invalidSaved||unknownProject);
     document.getElementById('source-note').textContent=(language==='ru'?'Данные из проверенных офферов · ':'Verified offer data · ')+snapshot.verifiedDate;
     document.title=(page==='projects'?projectName(active):page==='catalog'?t('catalogTitle'):t('comparison'))+' · '+t('profile');
     window.OfferAnalytics?.view({page,project_id:page==='catalog'?'catalog':projectId,unit_id:page==='projects'?(unitChoice[projectId]||active.data.units[0].id):'',title:page==='projects'?projectName(active)+' · Project':page==='catalog'?'All projects':'Project comparison',language});
     window.OfferAnalytics?.observe(page==='projects'?mounted.root:null);
+    syncContact(page);
   }
 
   function navigateProject(id){if(!known.has(id))return;const hash='#project='+id;if(location.hash===hash)render();else location.hash=hash;}

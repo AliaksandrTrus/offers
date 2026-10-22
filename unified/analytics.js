@@ -22,7 +22,7 @@
   function params(extra={}){
     const p={project_id:context?.page==='projects'?context.project_id:context?.page==='catalog'?'catalog':'comparison',unit_id:context?.unit_id||'',section_id:'',action:'',...extra};
     // All custom values originate in confirmed IDs or a fixed action vocabulary.
-    return Object.fromEntries(Object.entries(p).filter(([k,v])=>['project_id','unit_id','section_id','action','photo_index','view_context','plan_type','comparison_count'].includes(k)&&['string','number'].includes(typeof v)));
+    return Object.fromEntries(Object.entries(p).filter(([k,v])=>['project_id','unit_id','section_id','action','photo_index','view_context','plan_type','comparison_count','channel','contact_placement','contact_intent'].includes(k)&&['string','number'].includes(typeof v)));
   }
   function emit(name,extra){if(choice!=='granted'||!loaded)return;window.gtag('event',name,{...params(extra),send_to:ID,...(debug?{debug_mode:true}:{})});}
   function boot(){
@@ -48,7 +48,7 @@
   }
   function cancelTimers(){for(const h of timers.values())clearTimeout(h);timers.clear();}
   function stopSections(){cancelTimers();io?.disconnect();mo?.disconnect();io=mo=null;observedRoot=null;clearTimeout(refreshTimer);}
-  function visible(el){if(document.visibilityState!=='visible'||!el.isConnected||observedRoot?.querySelector('dialog[open]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
+  function visible(el){if(document.visibilityState!=='visible'||!el.isConnected||observedRoot?.querySelector('dialog[open]')||document.querySelector('#contact-dialog[open]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
   function refreshSections(){
     cancelTimers();io?.disconnect();io=null;
     if(!observedRoot||choice!=='granted'||context?.page!=='projects')return;
@@ -102,5 +102,6 @@
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')cancelTimers();else refreshSections();});
   window.addEventListener('storage',event=>{if(event.key===KEY){const latest=read();if(choice==='granted'&&latest!=='granted'){window['ga-disable-'+ID]=true;location.reload();}else{choice=latest;panel.hidden=choice!==null;if(choice==='granted')boot();}}});
   try{if(sessionStorage.getItem(KEY)==='denied'){sessionStorage.removeItem(KEY);choice='denied';panel.hidden=true;}}catch{}
+  document.addEventListener('offer:overlay-change',refreshSections);
   window.OfferAnalytics={view,observe,event:emit,unit(id){if(context?.page==='projects')context.unit_id=id;}};updateConsentText();
 })();
