@@ -13,8 +13,7 @@
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Lawncrest · визуализация проекта">
 <!-- ДАННЫЕ ОФЕРА: заменяйте только этот JSON по новым источникам. Пустые значения не наследуются из эталона. Внутренние сведения здесь не хранить. -->
-<script id="offer-data" type="application/json">
-{
+<script id="offer-data" type="application/json">{
   "schemaVersion": 1,
   "project": {
     "name": "Lawncrest",
@@ -187,20 +186,24 @@
   ],
   "units": [
     {
-      "id": "704",
+      "id": "P1-07",
       "title": {
-        "ru": "Квартира 704",
-        "en": "Apartment 704"
+        "ru": "Квартира P1-07",
+        "en": "Apartment P1-07"
       },
+      "price": 960000,
       "choiceArea": {
-        "ru": "70,18 м²",
-        "en": "70.18 m²"
+        "ru": "64,08 м²",
+        "en": "64.08 m²"
       },
       "choiceSubtitle": {
-        "ru": "1BR + кладовая",
-        "en": "1BR + storage"
+        "ru": "1BR",
+        "en": "1BR"
       },
-      "price": 1207500,
+      "selection": {
+        "category": "minimum_price",
+        "totalAreaM2": 64.07987184
+      },
       "facts": [
         {
           "label": {
@@ -208,22 +211,22 @@
             "en": "Layout"
           },
           "value": {
-            "ru": "1BR + кладовая",
-            "en": "1BR + storage"
+            "ru": "1BR",
+            "en": "1BR"
           }
         },
         {
           "label": {
-            "ru": "Площадь",
-            "en": "Area"
+            "ru": "Общая площадь",
+            "en": "Total area"
           },
           "value": {
-            "ru": "70,18 м²",
-            "en": "70.18 m²"
+            "ru": "64,08 м²",
+            "en": "64.08 m²"
           },
           "secondary": {
-            "ru": "755,41 sq ft",
-            "en": "755.41 sq ft"
+            "ru": "689,75 sq ft",
+            "en": "689.75 sq ft"
           }
         },
         {
@@ -232,56 +235,52 @@
             "en": "Apartment / floor"
           },
           "value": {
-            "ru": "704 / 7 этаж",
-            "en": "704 / 7th floor"
+            "ru": "P1-07 / Подиум P1",
+            "en": "P1-07 / Podium P1"
           }
         }
       ],
       "view": {
-        "ru": "Частичный вид на гольф и инфраструктуру.",
-        "en": "Partial golf and amenities view."
+        "ru": "Вид на бульвар — по списку наличия.",
+        "en": "Boulevard view, according to the inventory."
       },
       "plans": {
         "unit": {
-          "src": "images/plan-704.webp",
+          "src": "images/lawn-plan-P1-07.webp",
           "caption": {
-            "ru": "Квартира 704 · индивидуальный план",
-            "en": "Apartment 704 · individual plan"
+            "ru": "Квартира P1-07 · планировка",
+            "en": "Apartment P1-07 · layout"
           },
           "alt": {
-            "ru": "Индивидуальная планировка квартиры 704",
-            "en": "Individual plan of apartment 704"
+            "ru": "Квартира P1-07 · планировка",
+            "en": "Apartment P1-07 · layout"
           },
-          "width": 715,
-          "height": 900,
+          "width": 1010,
+          "height": 620,
           "note": {
-            "ru": "Внутри — 60,51 м² · Балкон — 9,67 м² · Два санузла",
-            "en": "Internal area — 60.51 m² · Balcony — 9.67 m² · Two bathrooms"
+            "ru": "План и размеры ориентировочные.",
+            "en": "Layout and dimensions are indicative."
           }
         },
         "floor": {
-          "src": "images/level-07.webp",
+          "src": "images/lawn-floor-P1-07.webp",
           "caption": {
-            "ru": "Квартира 704 · план 7-го этажа",
-            "en": "Apartment 704 · floor 7 plan"
+            "ru": "Квартира P1-07 · план этажа",
+            "en": "Apartment P1-07 · floor plan"
           },
           "alt": {
-            "ru": "План этажа, выделена квартира 704",
-            "en": "Floor plan, apartment 704 highlighted"
+            "ru": "Квартира P1-07 · расположение на этаже",
+            "en": "Apartment P1-07 · location on floor"
           },
-          "width": 635,
-          "height": 400,
-          "note": {
-            "ru": "Квартира 704 выделена номером 04.",
-            "en": "Apartment 704 is highlighted as 04."
+          "width": 990,
+          "height": 525,
+          "selection": {
+            "unitId": "P1-07",
+            "method": "source"
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
-            "en": "Location plan; availability is not shown."
-          },
-          "selection": {
-            "unitId": "704",
-            "method": "source"
+            "en": "Location diagram; no sales status implied."
           }
         }
       },
@@ -304,7 +303,7 @@
               "ru": "На старте · первый взнос и сборы",
               "en": "Initial payment and fees"
             },
-            "amount": 233625,
+            "amount": 186600,
             "note": {
               "ru": "Первый взнос и два указанных сбора.",
               "en": "Down payment and the two listed fees."
@@ -315,14 +314,14 @@
                   "ru": "15% · первый взнос",
                   "en": "15% · down payment"
                 },
-                "amount": 181125
+                "amount": 144000
               },
               {
                 "label": {
                   "ru": "4% · регистрационный сбор DLD",
                   "en": "4% · DLD registration fee"
                 },
-                "amount": 48300
+                "amount": 38400
               },
               {
                 "label": {
@@ -346,7 +345,7 @@
               "ru": "Пять платежей по графику",
               "en": "Five scheduled payments"
             },
-            "amount": 603750,
+            "amount": 480000,
             "note": {
               "ru": "50% стоимости квартиры по графику.",
               "en": "50% of the apartment price, as scheduled."
@@ -357,35 +356,35 @@
                   "ru": "01.10.2027 · 10%",
                   "en": "1 Oct 2027 · 10%"
                 },
-                "amount": 120750
+                "amount": 96000
               },
               {
                 "label": {
                   "ru": "01.01.2028 · 5%",
                   "en": "1 Jan 2028 · 5%"
                 },
-                "amount": 60375
+                "amount": 48000
               },
               {
                 "label": {
                   "ru": "01.04.2028 · 5%",
                   "en": "1 Apr 2028 · 5%"
                 },
-                "amount": 60375
+                "amount": 48000
               },
               {
                 "label": {
                   "ru": "01.09.2028 · 5%",
                   "en": "1 Sep 2028 · 5%"
                 },
-                "amount": 60375
+                "amount": 48000
               },
               {
                 "label": {
                   "ru": "14.06.2029 · 25%",
                   "en": "14 Jun 2029 · 25%"
                 },
-                "amount": 301875
+                "amount": 240000
               }
             ]
           },
@@ -402,7 +401,7 @@
               "ru": "Ежемесячный платёж · 1% цены",
               "en": "Monthly payment · 1% of the price"
             },
-            "amount": 12075,
+            "amount": 9600,
             "note": [
               {
                 "text": {
@@ -411,7 +410,7 @@
                 }
               },
               {
-                "amount": 422625
+                "amount": 336000
               },
               {
                 "text": {
@@ -495,7 +494,7 @@
               "ru": "15%",
               "en": "15%"
             },
-            "amount": 181125
+            "amount": 144000
           },
           {
             "label": {
@@ -506,7 +505,7 @@
               "ru": "4% отдельно",
               "en": "4% extra"
             },
-            "amount": 48300
+            "amount": 38400
           },
           {
             "label": {
@@ -528,7 +527,7 @@
               "ru": "10%",
               "en": "10%"
             },
-            "amount": 120750
+            "amount": 96000
           },
           {
             "label": {
@@ -539,7 +538,7 @@
               "ru": "5%",
               "en": "5%"
             },
-            "amount": 60375
+            "amount": 48000
           },
           {
             "label": {
@@ -550,7 +549,7 @@
               "ru": "5%",
               "en": "5%"
             },
-            "amount": 60375
+            "amount": 48000
           },
           {
             "label": {
@@ -561,7 +560,7 @@
               "ru": "5%",
               "en": "5%"
             },
-            "amount": 60375
+            "amount": 48000
           },
           {
             "label": {
@@ -572,7 +571,7 @@
               "ru": "25%",
               "en": "25%"
             },
-            "amount": 301875
+            "amount": 240000
           },
           {
             "label": {
@@ -591,7 +590,7 @@
               "ru": "По",
               "en": "Each"
             },
-            "amount": 12075
+            "amount": 9600
           },
           {
             "label": {
@@ -616,20 +615,24 @@
       }
     },
     {
-      "id": "512",
+      "id": "112",
       "title": {
-        "ru": "Квартира 512",
-        "en": "Apartment 512"
+        "ru": "Квартира 112",
+        "en": "Apartment 112"
       },
+      "price": 1150000,
       "choiceArea": {
-        "ru": "60,25 м²",
-        "en": "60.25 m²"
+        "ru": "90,26 м²",
+        "en": "90.26 m²"
       },
       "choiceSubtitle": {
         "ru": "1BR",
         "en": "1BR"
       },
-      "price": 1081500,
+      "selection": {
+        "category": "value_per_m2",
+        "totalAreaM2": 90.259948512
+      },
       "facts": [
         {
           "label": {
@@ -643,16 +646,16 @@
         },
         {
           "label": {
-            "ru": "Площадь",
-            "en": "Area"
+            "ru": "Общая площадь",
+            "en": "Total area"
           },
           "value": {
-            "ru": "60,25 м²",
-            "en": "60.25 m²"
+            "ru": "90,26 м²",
+            "en": "90.26 m²"
           },
           "secondary": {
-            "ru": "648,53 sq ft",
-            "en": "648.53 sq ft"
+            "ru": "971,55 sq ft",
+            "en": "971.55 sq ft"
           }
         },
         {
@@ -661,56 +664,52 @@
             "en": "Apartment / floor"
           },
           "value": {
-            "ru": "512 / 5 этаж",
-            "en": "512 / 5th floor"
+            "ru": "112 / 1 этаж",
+            "en": "112 / 1st floor"
           }
         }
       ],
       "view": {
-        "ru": "Вид на бассейн и гольф — по оферу.",
-        "en": "Pool and golf view, as stated in the offer."
+        "ru": "Вид на бассейн — по списку наличия.",
+        "en": "Pool view, according to the inventory."
       },
       "plans": {
         "unit": {
-          "src": "images/plan-512.webp",
+          "src": "images/lawn-plan-112.webp",
           "caption": {
-            "ru": "Квартира 512 · индивидуальный план",
-            "en": "Apartment 512 · individual plan"
+            "ru": "Квартира 112 · планировка",
+            "en": "Apartment 112 · layout"
           },
           "alt": {
-            "ru": "Индивидуальная планировка квартиры 512",
-            "en": "Individual plan of apartment 512"
+            "ru": "Квартира 112 · планировка",
+            "en": "Apartment 112 · layout"
           },
-          "width": 1250,
-          "height": 995,
+          "width": 885,
+          "height": 865,
           "note": {
-            "ru": "Внутри — 53,39 м² · Балкон — 6,86 м² · Санузел и гостевой WC",
-            "en": "Internal area — 53.39 m² · Balcony — 6.86 m² · Bathroom and guest WC"
+            "ru": "План и размеры ориентировочные.",
+            "en": "Layout and dimensions are indicative."
           }
         },
         "floor": {
-          "src": "images/level-05.webp",
+          "src": "images/lawn-floor-112.webp",
           "caption": {
-            "ru": "Квартира 512 · план 5-го этажа",
-            "en": "Apartment 512 · floor 5 plan"
+            "ru": "Квартира 112 · план этажа",
+            "en": "Apartment 112 · floor plan"
           },
           "alt": {
-            "ru": "План этажа, выделена квартира 512",
-            "en": "Floor plan, apartment 512 highlighted"
+            "ru": "Квартира 112 · расположение на этаже",
+            "en": "Apartment 112 · location on floor"
           },
-          "width": 745,
-          "height": 405,
-          "note": {
-            "ru": "Квартира 512 выделена номером 12.",
-            "en": "Apartment 512 is highlighted as 12."
+          "width": 930,
+          "height": 570,
+          "selection": {
+            "unitId": "112",
+            "method": "source"
           },
           "secondaryNote": {
             "ru": "Схема расположения, без статусов продаж.",
-            "en": "Location plan; availability is not shown."
-          },
-          "selection": {
-            "unitId": "512",
-            "method": "source"
+            "en": "Location diagram; no sales status implied."
           }
         }
       },
@@ -733,7 +732,7 @@
               "ru": "На старте · первый взнос и сборы",
               "en": "Initial payment and fees"
             },
-            "amount": 209685,
+            "amount": 222700,
             "note": {
               "ru": "Первый взнос и два указанных сбора.",
               "en": "Down payment and the two listed fees."
@@ -744,14 +743,14 @@
                   "ru": "15% · первый взнос",
                   "en": "15% · down payment"
                 },
-                "amount": 162225
+                "amount": 172500
               },
               {
                 "label": {
                   "ru": "4% · регистрационный сбор DLD",
                   "en": "4% · DLD registration fee"
                 },
-                "amount": 43260
+                "amount": 46000
               },
               {
                 "label": {
@@ -775,7 +774,7 @@
               "ru": "Пять платежей по графику",
               "en": "Five scheduled payments"
             },
-            "amount": 540750,
+            "amount": 575000,
             "note": {
               "ru": "50% стоимости квартиры по графику.",
               "en": "50% of the apartment price, as scheduled."
@@ -786,35 +785,35 @@
                   "ru": "01.10.2027 · 10%",
                   "en": "1 Oct 2027 · 10%"
                 },
-                "amount": 108150
+                "amount": 115000
               },
               {
                 "label": {
                   "ru": "01.01.2028 · 5%",
                   "en": "1 Jan 2028 · 5%"
                 },
-                "amount": 54075
+                "amount": 57500
               },
               {
                 "label": {
                   "ru": "01.04.2028 · 5%",
                   "en": "1 Apr 2028 · 5%"
                 },
-                "amount": 54075
+                "amount": 57500
               },
               {
                 "label": {
                   "ru": "01.09.2028 · 5%",
                   "en": "1 Sep 2028 · 5%"
                 },
-                "amount": 54075
+                "amount": 57500
               },
               {
                 "label": {
                   "ru": "14.06.2029 · 25%",
                   "en": "14 Jun 2029 · 25%"
                 },
-                "amount": 270375
+                "amount": 287500
               }
             ]
           },
@@ -831,7 +830,7 @@
               "ru": "Ежемесячный платёж · 1% цены",
               "en": "Monthly payment · 1% of the price"
             },
-            "amount": 10815,
+            "amount": 11500,
             "note": [
               {
                 "text": {
@@ -840,7 +839,7 @@
                 }
               },
               {
-                "amount": 378525
+                "amount": 402500
               },
               {
                 "text": {
@@ -924,7 +923,7 @@
               "ru": "15%",
               "en": "15%"
             },
-            "amount": 162225
+            "amount": 172500
           },
           {
             "label": {
@@ -935,7 +934,7 @@
               "ru": "4% отдельно",
               "en": "4% extra"
             },
-            "amount": 43260
+            "amount": 46000
           },
           {
             "label": {
@@ -957,7 +956,7 @@
               "ru": "10%",
               "en": "10%"
             },
-            "amount": 108150
+            "amount": 115000
           },
           {
             "label": {
@@ -968,7 +967,7 @@
               "ru": "5%",
               "en": "5%"
             },
-            "amount": 54075
+            "amount": 57500
           },
           {
             "label": {
@@ -979,7 +978,7 @@
               "ru": "5%",
               "en": "5%"
             },
-            "amount": 54075
+            "amount": 57500
           },
           {
             "label": {
@@ -990,7 +989,7 @@
               "ru": "5%",
               "en": "5%"
             },
-            "amount": 54075
+            "amount": 57500
           },
           {
             "label": {
@@ -1001,7 +1000,7 @@
               "ru": "25%",
               "en": "25%"
             },
-            "amount": 270375
+            "amount": 287500
           },
           {
             "label": {
@@ -1020,7 +1019,436 @@
               "ru": "По",
               "en": "Each"
             },
-            "amount": 10815
+            "amount": 11500
+          },
+          {
+            "label": {
+              "ru": "При передаче · admin fee",
+              "en": "At handover · admin fee"
+            },
+            "share": {
+              "ru": "Отдельно",
+              "en": "Extra"
+            },
+            "amount": 3000,
+            "suffix": {
+              "ru": "+ VAT",
+              "en": "+ VAT"
+            }
+          }
+        ],
+        "terms": {
+          "ru": "15% + 50% + 35% = 100% цены. DLD и admin fee оплачиваются отдельно. Даты платежей — по графику; дата передачи уточняется. Предложение от 20.10.2026 действует один день; условия могут меняться. Цена и наличие подтверждаются перед бронированием.",
+          "en": "15% + 50% + 35% = 100% of the price. DLD and administration fees are extra. Payment dates follow the schedule; the handover date is to be confirmed. The offer dated 20 Oct 2026 is valid for one day; terms may change. Price and availability are reconfirmed before booking."
+        }
+      }
+    },
+    {
+      "id": "109",
+      "title": {
+        "ru": "Квартира 109",
+        "en": "Apartment 109"
+      },
+      "price": 1095000,
+      "choiceArea": {
+        "ru": "81,58 м²",
+        "en": "81.58 m²"
+      },
+      "choiceSubtitle": {
+        "ru": "1BR",
+        "en": "1BR"
+      },
+      "selection": {
+        "category": "largest_area",
+        "totalAreaM2": 81.5800174848
+      },
+      "facts": [
+        {
+          "label": {
+            "ru": "Планировка",
+            "en": "Layout"
+          },
+          "value": {
+            "ru": "1BR",
+            "en": "1BR"
+          }
+        },
+        {
+          "label": {
+            "ru": "Общая площадь",
+            "en": "Total area"
+          },
+          "value": {
+            "ru": "81,58 м²",
+            "en": "81.58 m²"
+          },
+          "secondary": {
+            "ru": "878,12 sq ft",
+            "en": "878.12 sq ft"
+          }
+        },
+        {
+          "label": {
+            "ru": "Квартира / этаж",
+            "en": "Apartment / floor"
+          },
+          "value": {
+            "ru": "109 / 1 этаж",
+            "en": "109 / 1st floor"
+          }
+        }
+      ],
+      "view": {
+        "ru": "Вид на бассейн — по списку наличия.",
+        "en": "Pool view, according to the inventory."
+      },
+      "plans": {
+        "unit": {
+          "src": "images/lawn-plan-109.webp",
+          "caption": {
+            "ru": "Квартира 109 · планировка",
+            "en": "Apartment 109 · layout"
+          },
+          "alt": {
+            "ru": "Квартира 109 · планировка",
+            "en": "Apartment 109 · layout"
+          },
+          "width": 975,
+          "height": 925,
+          "note": {
+            "ru": "План и размеры ориентировочные.",
+            "en": "Layout and dimensions are indicative."
+          }
+        },
+        "floor": {
+          "src": "images/lawn-floor-109.webp",
+          "caption": {
+            "ru": "Квартира 109 · план этажа",
+            "en": "Apartment 109 · floor plan"
+          },
+          "alt": {
+            "ru": "Квартира 109 · расположение на этаже",
+            "en": "Apartment 109 · location on floor"
+          },
+          "width": 930,
+          "height": 570,
+          "selection": {
+            "unitId": "109",
+            "method": "source"
+          },
+          "secondaryNote": {
+            "ru": "Схема расположения, без статусов продаж.",
+            "en": "Location diagram; no sales status implied."
+          }
+        }
+      },
+      "payments": {
+        "summary": {
+          "ru": "15% + 50% + 35%",
+          "en": "15% + 50% + 35%"
+        },
+        "stages": [
+          {
+            "label": {
+              "ru": "15%",
+              "en": "15%"
+            },
+            "subtitle": {
+              "ru": "Первый взнос + сборы",
+              "en": "Down payment + fees"
+            },
+            "title": {
+              "ru": "На старте · первый взнос и сборы",
+              "en": "Initial payment and fees"
+            },
+            "amount": 212250,
+            "note": {
+              "ru": "Первый взнос и два указанных сбора.",
+              "en": "Down payment and the two listed fees."
+            },
+            "rows": [
+              {
+                "label": {
+                  "ru": "15% · первый взнос",
+                  "en": "15% · down payment"
+                },
+                "amount": 164250
+              },
+              {
+                "label": {
+                  "ru": "4% · регистрационный сбор DLD",
+                  "en": "4% · DLD registration fee"
+                },
+                "amount": 43800
+              },
+              {
+                "label": {
+                  "ru": "Административный сбор",
+                  "en": "Administration fee"
+                },
+                "amount": 4200
+              }
+            ]
+          },
+          {
+            "label": {
+              "ru": "50%",
+              "en": "50%"
+            },
+            "subtitle": {
+              "ru": "2027 — июнь 2029",
+              "en": "2027 — Jun 2029"
+            },
+            "title": {
+              "ru": "Пять платежей по графику",
+              "en": "Five scheduled payments"
+            },
+            "amount": 547500,
+            "note": {
+              "ru": "50% стоимости квартиры по графику.",
+              "en": "50% of the apartment price, as scheduled."
+            },
+            "rows": [
+              {
+                "label": {
+                  "ru": "01.10.2027 · 10%",
+                  "en": "1 Oct 2027 · 10%"
+                },
+                "amount": 109500
+              },
+              {
+                "label": {
+                  "ru": "01.01.2028 · 5%",
+                  "en": "1 Jan 2028 · 5%"
+                },
+                "amount": 54750
+              },
+              {
+                "label": {
+                  "ru": "01.04.2028 · 5%",
+                  "en": "1 Apr 2028 · 5%"
+                },
+                "amount": 54750
+              },
+              {
+                "label": {
+                  "ru": "01.09.2028 · 5%",
+                  "en": "1 Sep 2028 · 5%"
+                },
+                "amount": 54750
+              },
+              {
+                "label": {
+                  "ru": "14.06.2029 · 25%",
+                  "en": "14 Jun 2029 · 25%"
+                },
+                "amount": 273750
+              }
+            ]
+          },
+          {
+            "label": {
+              "ru": "35%",
+              "en": "35%"
+            },
+            "subtitle": {
+              "ru": "Июль 2029 — май 2032",
+              "en": "Jul 2029 — May 2032"
+            },
+            "title": {
+              "ru": "Ежемесячный платёж · 1% цены",
+              "en": "Monthly payment · 1% of the price"
+            },
+            "amount": 10950,
+            "note": [
+              {
+                "text": {
+                  "ru": "35 ежемесячных платежей. Всего на этом этапе — ",
+                  "en": "35 monthly payments. Total for this stage — "
+                }
+              },
+              {
+                "amount": 383250
+              },
+              {
+                "text": {
+                  "ru": ", или 35% стоимости квартиры.",
+                  "en": ", or 35% of the apartment price."
+                }
+              }
+            ],
+            "intro": {
+              "ru": "С 1 июля 2029 по 1 мая 2032 включительно — по первому числу каждого месяца.",
+              "en": "From 1 July 2029 to 1 May 2032 inclusive, on the first day of each month."
+            },
+            "rows": [
+              {
+                "label": {
+                  "ru": "Июль — декабрь 2029",
+                  "en": "Jul — Dec 2029"
+                },
+                "value": {
+                  "ru": "6 платежей",
+                  "en": "6 payments"
+                }
+              },
+              {
+                "label": {
+                  "ru": "Январь — декабрь 2030",
+                  "en": "Jan — Dec 2030"
+                },
+                "value": {
+                  "ru": "12 платежей",
+                  "en": "12 payments"
+                }
+              },
+              {
+                "label": {
+                  "ru": "Январь — декабрь 2031",
+                  "en": "Jan — Dec 2031"
+                },
+                "value": {
+                  "ru": "12 платежей",
+                  "en": "12 payments"
+                }
+              },
+              {
+                "label": {
+                  "ru": "Январь — май 2032",
+                  "en": "Jan — May 2032"
+                },
+                "value": {
+                  "ru": "5 платежей",
+                  "en": "5 payments"
+                }
+              }
+            ]
+          }
+        ],
+        "extra": [
+          {
+            "text": {
+              "ru": "При передаче дополнительно: ",
+              "en": "Additional fee at handover: "
+            }
+          },
+          {
+            "amount": 3000
+          },
+          {
+            "text": {
+              "ru": " + VAT.",
+              "en": " + VAT."
+            }
+          }
+        ],
+        "schedule": [
+          {
+            "label": {
+              "ru": "При бронировании",
+              "en": "On booking"
+            },
+            "share": {
+              "ru": "15%",
+              "en": "15%"
+            },
+            "amount": 164250
+          },
+          {
+            "label": {
+              "ru": "На старте · DLD",
+              "en": "On booking · DLD"
+            },
+            "share": {
+              "ru": "4% отдельно",
+              "en": "4% extra"
+            },
+            "amount": 43800
+          },
+          {
+            "label": {
+              "ru": "На старте · admin fee",
+              "en": "On booking · admin fee"
+            },
+            "share": {
+              "ru": "Отдельно",
+              "en": "Extra"
+            },
+            "amount": 4200
+          },
+          {
+            "label": {
+              "ru": "01.10.2027",
+              "en": "1 Oct 2027"
+            },
+            "share": {
+              "ru": "10%",
+              "en": "10%"
+            },
+            "amount": 109500
+          },
+          {
+            "label": {
+              "ru": "01.01.2028",
+              "en": "1 Jan 2028"
+            },
+            "share": {
+              "ru": "5%",
+              "en": "5%"
+            },
+            "amount": 54750
+          },
+          {
+            "label": {
+              "ru": "01.04.2028",
+              "en": "1 Apr 2028"
+            },
+            "share": {
+              "ru": "5%",
+              "en": "5%"
+            },
+            "amount": 54750
+          },
+          {
+            "label": {
+              "ru": "01.09.2028",
+              "en": "1 Sep 2028"
+            },
+            "share": {
+              "ru": "5%",
+              "en": "5%"
+            },
+            "amount": 54750
+          },
+          {
+            "label": {
+              "ru": "14.06.2029",
+              "en": "14 Jun 2029"
+            },
+            "share": {
+              "ru": "25%",
+              "en": "25%"
+            },
+            "amount": 273750
+          },
+          {
+            "label": {
+              "ru": "01.07.2029–01.05.2032",
+              "en": "1 Jul 2029 – 1 May 2032"
+            },
+            "note": {
+              "ru": "Ежемесячно, по первому числу · 35 платежей",
+              "en": "Monthly, on the first day · 35 payments"
+            },
+            "share": {
+              "ru": "По 1%",
+              "en": "1% each"
+            },
+            "prefix": {
+              "ru": "По",
+              "en": "Each"
+            },
+            "amount": 10950
           },
           {
             "label": {
@@ -1057,9 +1485,11 @@
   "contact": {
     "projectId": "lawncrest",
     "publicUrl": "https://aliaksandrtrus.github.io/offers/lawncrest/"
+  },
+  "selection": {
+    "mode": "automatic_1br"
   }
-}
-</script>
+}</script>
 <style>
 
 :root{--paper:#f5f3ec;--white:#fffefa;--ink:#273c33;--muted:#737b70;--line:#d9ddd2;--soft:#e9ede4;--sand:#b59a73;--sans:'Bahnschrift','Segoe UI','Helvetica Neue',Arial,Helvetica,sans-serif}
@@ -1109,6 +1539,8 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
 
 .project-counts{flex-wrap:wrap}.project-counts span{white-space:nowrap}
 @media(max-width:760px){.facts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.unit-choice{width:100%;min-width:0}.unit-options{grid-template-columns:repeat(4,minmax(0,1fr))}.unit-option{min-width:0;overflow-wrap:anywhere;min-height:82px}.unit-option .unit-category{display:block;font-size:11px;font-weight:500;line-height:1.4;margin-bottom:7px}.unit-option .unit-selection-price{display:block;font-size:12px;margin-top:6px}.unit-selection-rate,.unit-selection-scope{display:block;font-size:10px;line-height:1.5;margin-top:3px}.unit-selection-scope{opacity:.75}.unit-request-view{display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--green,#253d35);background:#e9ece4;border-style:dashed;min-height:44px}.unit-request-view:focus-visible{outline:2px solid #253d35;outline-offset:3px}@media(max-width:760px){.unit-options{grid-template-columns:repeat(2,minmax(0,1fr))}.unit-choice{width:100%}.unit-option{padding:10px}.unit-option .unit-number{font-size:20px}.unit-option .unit-size{font-size:10px}.unit-request-view{font-size:11px}}
+
 </style></head><body>
 <p id="template-status" class="page" role="status">Шаблон не заполнен. Данные нового предложения добавляет помощник по рабочему промпту.</p>
 <noscript><p class="page">Для просмотра предложения включите JavaScript. / Enable JavaScript to view the offer.</p></noscript>
@@ -1197,11 +1629,15 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
     }
     if(!copy.children.length)aside.hidden=true;aside.append(copy);return aside;
   }
+  /* SELECTION_V13 */
+  const selectionLabels={minimum_price:{ru:'Минимальная цена',en:'Lowest price'},value_per_m2:{ru:'Выгодный метр',en:'Value per m²'},largest_area:{ru:'Большая площадь',en:'Largest remaining area'}};
+  if(data.selection?.mode==='automatic_1br' && (data.units.length!==3 || new Set(data.units.map(u=>u.id)).size!==3 || new Set(data.units.map(u=>u.selection?.category)).size!==3 || data.units.some(u=>!selectionLabels[u.selection?.category] || !(u.selection?.totalAreaM2>0)))){status.hidden=false;main.hidden=true;status.textContent='Проверьте три разные подтверждённые квартиры и категории подбора.';return;}
   function unitChoices(compact) {
     const node=labelledGroup(compact?'payment-unit-options':'unit-options',t(compact?'paymentOptions':'options'));
     data.units.forEach((u,index)=>{const b=button(compact?'':'unit-option','',()=>{unitIndex=index;stageIndex=Math.min(stageIndex,Math.max(0,(u.payments?.stages?.length||0)-1));renderUnit();});b.dataset.unit=u.id;b.setAttribute('aria-pressed',String(unitIndex===index));b.setAttribute('aria-controls','unit-summary plans payments');
       if(compact){b.textContent=u.id;b.setAttribute('aria-label',t('payments')+' · '+local(u.title));}
-      else {const n=el('span','unit-number',u.id);if(local(u.choiceArea))n.append(el('span','unit-size',local(u.choiceArea)));b.append(n);if(local(u.choiceSubtitle))b.append(el('span','unit-description',local(u.choiceSubtitle)));}node.append(b);});return node;
+      else {if(u.selection?.category)b.append(el('span','unit-category',local(selectionLabels[u.selection.category])));const n=el('span','unit-number',u.id);if(local(u.choiceArea))n.append(el('span','unit-size',local(u.choiceArea)));b.append(n);if(local(u.choiceSubtitle))b.append(el('span','unit-description',local(u.choiceSubtitle)));}if(!compact&&u.selection?.category){const p=el('span','unit-selection-price');p.append(amount(u.price));b.append(p);const rate=el('span','unit-selection-rate');rate.append(amount(u.price/u.selection.totalAreaM2),language==='ru'?' / м²':' / m²');b.append(rate);if(u.selection.category!=='minimum_price')b.append(el('span','unit-selection-scope',language==='ru'?'Среди оставшихся':'Among remaining options'));}node.append(b);});
+    if(!compact){const request=button('unit-option unit-request-view',language==='ru'?'Запросить лучший вид':'Request a better view',()=>window.OfferContact?.open(request,'unit_selector','best_view'));request.setAttribute('aria-haspopup','dialog');request.setAttribute('aria-controls','contact-dialog');request.dataset.bestView='';node.append(request);}return node;
   }
   function units() {
     const unit=data.units[unitIndex], node=el('section','detail-section unit-section');node.id='apartments';node.setAttribute('aria-labelledby','apartments-title');
@@ -1363,7 +1799,7 @@ body.contact-open{overflow:hidden}body.contact-open .analytics-consent{visibilit
 </style>
 <div id="selection-bar" class="selection-bar standalone-contact-bar" hidden><div class="bar-actions"><button type="button" class="contact-trigger" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog">Задать вопрос</button></div></div>
 <script>(()=>{const d=JSON.parse(document.getElementById('offer-data').textContent),m=document.createElement('meta');m.name='offer-contact-url';m.content=d.contact?.publicUrl||'';document.head.append(m);})();</script>
-<script>// Local proposal. Contact links work without analytics consent; never send messages.
+<script>// Accepted contact component with project-level best-view intent. Contact links work without analytics consent; never send messages.
 (() => {
   'use strict';
   if(window.OfferContact)return;
@@ -1377,19 +1813,20 @@ body.contact-open{overflow:hidden}body.contact-open .analytics-consent{visibilit
   dialog.innerHTML='<div class="contact-heading"><h2 id="contact-title"></h2><button type="button" class="contact-close" aria-label="Закрыть">×</button></div><p class="contact-context" id="contact-context"></p><p id="contact-description"></p><div class="contact-channels"><a data-contact-channel="whatsapp" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">WhatsApp <span aria-hidden="true">↗</span></a><a data-contact-channel="telegram" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">Telegram <span aria-hidden="true">↗</span></a></div>';
   document.body.append(dialog);
   const wa=dialog.querySelector('[data-contact-channel="whatsapp"]'),tg=dialog.querySelector('[data-contact-channel="telegram"]');tg.href=TG;
-  const words={ru:{discountTitle:'Узнать о скидке',questionTitle:'Задать вопрос',discountBody:'Напишите Александру — уточните возможность скидки или более выгодных условий.',questionBody:'Выберите удобный мессенджер — Александр ответит на ваши вопросы.',close:'Закрыть окно связи',unit:'Квартира',empty:'Проекты ещё не выбраны'},en:{discountTitle:'Ask about a discount',questionTitle:'Ask a question',discountBody:'Message Alexander to ask whether a discount or better purchase terms may be available.',questionBody:'Choose your preferred messenger — Alexander will answer your questions.',close:'Close contact options',unit:'Apartment',empty:'No projects selected yet'}};
+  const words={ru:{bestViewTitle:'Подобрать квартиру с лучшим видом',bestViewBody:'Напишите Александру — он поможет подобрать вариант с учётом ваших предпочтений.',discountTitle:'Узнать о скидке',questionTitle:'Задать вопрос',discountBody:'Напишите Александру — уточните возможность скидки или более выгодных условий.',questionBody:'Выберите удобный мессенджер — Александр ответит на ваши вопросы.',close:'Закрыть окно связи',unit:'Квартира',empty:'Проекты ещё не выбраны'},en:{bestViewTitle:'Find an apartment with a better view',bestViewBody:'Message Alexander — he will help find an option based on your preferences.',discountTitle:'Ask about a discount',questionTitle:'Ask a question',discountBody:'Message Alexander to ask whether a discount or better purchase terms may be available.',questionBody:'Choose your preferred messenger — Alexander will answer your questions.',close:'Close contact options',unit:'Apartment',empty:'No projects selected yet'}};
   const language=()=>context?.language==='en'?'en':'ru';
   function publicLink(){const u=new URL(PUBLIC);if(context?.page==='projects'&&!standaloneTag)u.hash='project='+context.project_id;return u.href;}
   function draft(){
     const en=language()==='en';
+    if(intent==='best_view')return (en?`Alexander, hello! I’m interested in project ${context.projectName}. I’d like an apartment with a better view. What options could you suggest?`:`Александр, здравствуйте! Интересует проект ${context.projectName}. Хотелось бы подобрать квартиру с лучшим видом. Какие варианты можете предложить?`)+'\n'+publicLink();
     if(context.page==='projects')return (intent==='discount'?(en?`Alexander, hello! I’m interested in ${context.projectName}, apartment ${context.unit_id}. Could I get a discount or better purchase terms?`:`Александр, здравствуйте! Интересует ${context.projectName}, квартира ${context.unit_id}. Можно ли получить скидку или более выгодные условия?`):(en?`Alexander, hello! I have a question about project ${context.projectName}, apartment ${context.unit_id}.`:`Александр, здравствуйте! У меня вопрос по проекту ${context.projectName}, квартире ${context.unit_id}.`))+'\n'+publicLink();
     if(context.page==='compare'){const names=context.selectedProjects.map(o=>o.name).join(', ');return (names?(en?`Alexander, hello! I have a question about these selected projects: ${names}.`:`Александр, здравствуйте! У меня вопрос по выбранным проектам: ${names}.`):(en?'Alexander, hello! I have a question about comparing projects.':'Александр, здравствуйте! У меня вопрос по сравнению проектов.'))+'\n'+PUBLIC;}
     return (en?'Alexander, hello! I have a question about projects and apartment options.':'Александр, здравствуйте! У меня вопрос по проектам и вариантам квартир.')+'\n'+PUBLIC;
   }
-  function fill(){if(!context)return;const w=words[language()];dialog.querySelector('#contact-title').textContent=intent==='discount'?w.discountTitle:w.questionTitle;dialog.querySelector('#contact-description').textContent=intent==='discount'?w.discountBody:w.questionBody;dialog.querySelector('.contact-close').setAttribute('aria-label',w.close);dialog.querySelector('#contact-context').textContent=context.page==='projects'?context.projectName+' · '+w.unit+' '+context.unit_id:context.page==='compare'?(context.selectedProjects.map(o=>o.name).join(' · ')||w.empty):'';const u=new URL(WA);u.searchParams.set('text',draft());wa.href=u.href;}
-  function event(name,extra={}){try{window.OfferAnalytics?.event(name,{project_id:context.project_id,unit_id:context.page==='projects'?context.unit_id:'',section_id:'contact',contact_placement:placement,contact_intent:intent,action:name==='contact_open'?'open':'messenger_redirect',...(context.page==='compare'?{comparison_count:context.selectedProjects.length}:{}),...extra});}catch{}}
+  function fill(){if(!context)return;const w=words[language()];dialog.querySelector('#contact-title').textContent=intent==='best_view'?w.bestViewTitle:intent==='discount'?w.discountTitle:w.questionTitle;dialog.querySelector('#contact-description').textContent=intent==='best_view'?w.bestViewBody:intent==='discount'?w.discountBody:w.questionBody;dialog.querySelector('.contact-close').setAttribute('aria-label',w.close);dialog.querySelector('#contact-context').textContent=context.page==='projects'?context.projectName+(intent==='best_view'?'':' · '+w.unit+' '+context.unit_id):context.page==='compare'?(context.selectedProjects.map(o=>o.name).join(' · ')||w.empty):'';const u=new URL(WA);u.searchParams.set('text',draft());wa.href=u.href;}
+  function event(name,extra={}){try{window.OfferAnalytics?.event(name,{project_id:context.project_id,unit_id:context.page==='projects'&&intent!=='best_view'?context.unit_id:'',section_id:'contact',contact_placement:placement,contact_intent:intent,action:name==='contact_open'?'open':'messenger_redirect',...(context.page==='compare'?{comparison_count:context.selectedProjects.length}:{}),...extra});}catch{}}
   function overlay(){document.dispatchEvent(new CustomEvent('offer:overlay-change'));}
-  function open(button,source='bottom_bar',purpose='question'){if(!context||dialog.open||document.body.classList.contains('viewer-open'))return;opener=button;const discount=context.page==='projects'&&source==='unit_price'&&purpose==='discount';placement=discount?'unit_price':'bottom_bar';intent=discount?'discount':'question';lastClick=null;fill();dialog.showModal();document.body.classList.add('contact-open');overlay();dialog.querySelector('.contact-close').focus({preventScroll:true});event('contact_open');}
+  function open(button,source='bottom_bar',purpose='question'){if(!context||dialog.open||document.body.classList.contains('viewer-open'))return;opener=button;const discount=context.page==='projects'&&source==='unit_price'&&purpose==='discount';const bestView=context.page==='projects'&&source==='unit_selector'&&purpose==='best_view';placement=bestView?'unit_selector':discount?'unit_price':'bottom_bar';intent=bestView?'best_view':discount?'discount':'question';lastClick=null;fill();dialog.showModal();document.body.classList.add('contact-open');overlay();dialog.querySelector('.contact-close').focus({preventScroll:true});event('contact_open');}
   document.addEventListener('click',e=>{const button=e.target.closest('[data-contact-open]');if(button)open(button);});
   dialog.querySelector('.contact-close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('cancel',e=>{e.preventDefault();dialog.close();});
@@ -1399,6 +1836,7 @@ body.contact-open{overflow:hidden}body.contact-open .analytics-consent{visibilit
   const resize=new ResizeObserver(()=>{const height=bar.getBoundingClientRect().height;document.documentElement.style.setProperty('--selection-bar-height',Math.ceil(height)+'px');});resize.observe(bar);
   window.OfferContact={open,update(next){const changed=context&&(context.page!==next.page||context.project_id!==next.project_id||context.unit_id!==next.unit_id);if(changed&&dialog.open)dialog.close();context=next;fill();},unit(id){if(context?.page==='projects'){if(dialog.open)dialog.close();context.unit_id=id;fill();}}};
 })();
+
 </script>
 <script>(()=>{'use strict';if(!window.OfferContact)return;const data=JSON.parse(document.getElementById('offer-data').textContent),settings=data.contact;if(!settings?.projectId||!/^https:\/\//.test(settings.publicUrl))return;const overview=document.getElementById('overview');if(!overview||overview.hidden)return;const bar=document.getElementById('selection-bar'),bottom=bar.querySelector('[data-contact-open]'),button=document.createElement('button'),wrap=document.createElement('div');let key='';wrap.className='unit-price-contact';button.type='button';button.className='unit-discount-button';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','contact-dialog');wrap.append(button);button.addEventListener('click',()=>window.OfferContact.open(button,'unit_price','discount'));function sync(){const price=document.querySelector('#unit-summary .price');if(price&&wrap.parentElement!==price)price.append(wrap);const language=document.documentElement.lang==='en'?'en':'ru',label=language==='en'?'Ask about a discount':'Узнать о скидке',question=language==='en'?'Ask a question':'Задать вопрос';if(button.textContent!==label)button.textContent=label;if(bottom.textContent!==question)bottom.textContent=question;const unit=document.querySelector('.unit-options [aria-pressed="true"]')?.dataset.unit||data.units[0]?.id||'',next=language+':'+unit;if(next!==key){key=next;window.OfferContact.update({page:'projects',project_id:settings.projectId,projectName:data.project.name,unit_id:unit,language,selectedProjects:[]});}}sync();bar.hidden=false;new MutationObserver(sync).observe(overview,{childList:true,subtree:true});})();</script>
 <!-- OFFER_CONTACT_END -->
