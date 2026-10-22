@@ -100,6 +100,8 @@
     const notice=document.getElementById('storage-notice');notice.textContent=memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');notice.classList.toggle('warning',memoryOnly||invalidSaved);
     document.getElementById('source-note').textContent=(language==='ru'?'Данные из проверенных офферов · ':'Verified offer data · ')+snapshot.verifiedDate;
     document.title=(page==='projects'?projectName(active):page==='home'?t('home'):t('comparison'))+' · '+t('profile');
+    window.OfferAnalytics?.view({page,project_id:projectId,unit_id:page==='projects'?(unitChoice[projectId]||active.data.units[0].id):'',title:page==='projects'?projectName(active)+' · Project':'Project comparison',language});
+    window.OfferAnalytics?.observe(page==='projects'?mounted.root:null);
   }
 
   function announce(key){document.getElementById('announcement').textContent=t(key);}
@@ -109,9 +111,9 @@
     else if(b.dataset.projectChoice){projectId=b.dataset.projectChoice;district=districtKey(offers.find(o=>o.id===projectId));persist();render();main.querySelector('[data-project-choice="'+projectId+'"]')?.focus({preventScroll:true});}
     else if(b.dataset.language){language=b.dataset.language;persist();render();document.querySelector(`[data-language="${language}"]`).focus();}
     else if(b.dataset.currency){currency=b.dataset.currency;persist();render();document.querySelector(`[data-currency="${currency}"]`).focus();}
-    else if(b.dataset.select){const id=b.dataset.select;if(!known.has(id))return;const removed=selected.delete(id);if(!removed)selected.add(id);persist();render();announce(removed?'removed':'added');document.querySelector(`[data-select="${id}"]`)?.focus();}
-    else if(b.dataset.remove){selected.delete(b.dataset.remove);persist();render();announce('removed');main.querySelector('h1')?.setAttribute('tabindex','-1');main.querySelector('h1')?.focus({preventScroll:true});}
-    else if(b.hasAttribute('data-clear')){selected.clear();persist();render();announce('cleared');}
+    else if(b.dataset.select){const id=b.dataset.select;if(!known.has(id))return;const removed=selected.delete(id);if(!removed)selected.add(id);persist();render();window.OfferAnalytics?.event('comparison_change',{project_id:id,section_id:'comparison',action:removed?'remove':'add',comparison_count:selected.size});announce(removed?'removed':'added');document.querySelector(`[data-select="${id}"]`)?.focus();}
+    else if(b.dataset.remove){const id=b.dataset.remove;selected.delete(id);persist();render();window.OfferAnalytics?.event('comparison_change',{project_id:id,section_id:'comparison',action:'remove',comparison_count:selected.size});announce('removed');main.querySelector('h1')?.setAttribute('tabindex','-1');main.querySelector('h1')?.focus({preventScroll:true});}
+    else if(b.hasAttribute('data-clear')){if(selected.size)window.OfferAnalytics?.event('comparison_change',{project_id:'comparison',section_id:'comparison',action:'clear',comparison_count:selected.size});selected.clear();persist();render();announce('cleared');}
   });
   main.addEventListener('toggle',event=>{if(event.target.matches('details.project-picker')&&event.target.isConnected){pickerOpen=event.target.open;}},true);
   window.addEventListener('hashchange',()=>{render();main.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});});

@@ -9,11 +9,17 @@ window.mountLocalOffer=function({host,offer,language,currency,unitId,onUnit}){
   const input=document.createElement('script');input.type='application/json';input.id='offer-data';input.textContent=JSON.stringify(data);
   shadow.append(style,input);const template=document.createElement('template');template.innerHTML=shell.body;shadow.append(template.content.cloneNode(true));
   const localDocument=new Proxy(document,{get(target,key){if(key==='getElementById'||key==='querySelector'||key==='querySelectorAll')return shadow[key].bind(shadow);if(key==='activeElement')return shadow.activeElement;const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;},set(target,key,value){if(key==='title')return true;return Reflect.set(target,key,value,target);}});
-  const localWindow=new Proxy(window,{get(target,key){if(key==='addEventListener')return (name,handler,options)=>{target.addEventListener(name,handler,options);listeners.push([name,handler,options]);};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;}});
+  let syncing=false;
+  const localWindow=new Proxy(window,{get(target,key){if(key==='offerAnalyticsEvent')return (action,extra)=>{if(!syncing)window.OfferAnalytics?.event(action,{project_id:offer.id,...extra});};if(key==='addEventListener')return (name,handler,options)=>{target.addEventListener(name,handler,options);listeners.push([name,handler,options]);};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;}});
   window.OFFER_RENDERERS[offer.id](localDocument,localWindow);
   if(shadow.getElementById('overview').hidden)throw Error('Verified offer did not pass presentation validation');
-  shadow.addEventListener('click',event=>{const b=event.target.closest('[data-unit]');if(b)onUnit(b.dataset.unit);},true);
-  function sync(lang,code,unit){const langButton=shadow.querySelector(`[data-language="${lang}"]`);if(langButton?.getAttribute('aria-pressed')!=='true')langButton?.click();const currencyButton=shadow.querySelector(`[data-currency-choice="${code}"]`);if(currencyButton?.getAttribute('aria-pressed')!=='true')currencyButton?.click();if(unit){const choice=shadow.querySelector(`.unit-options [data-unit="${CSS.escape(unit)}"]`);if(choice?.getAttribute('aria-pressed')!=='true')choice?.click();}}
+  shadow.addEventListener('click',event=>{const b=event.target.closest('[data-unit]');if(b){onUnit(b.dataset.unit);if(!syncing)window.OfferAnalytics?.unit(b.dataset.unit);if(!syncing&&b.getAttribute('aria-pressed')!=='true')window.OfferAnalytics?.event('unit_select',{project_id:offer.id,unit_id:b.dataset.unit,section_id:'apartments',action:'select'});}
+    if(syncing)return;
+    const currentUnit=()=>shadow.querySelector('.unit-options [aria-pressed="true"]')?.dataset.unit||data.units[0].id;
+    if(event.target.closest('.map-link'))window.OfferAnalytics?.event('map_open',{project_id:offer.id,unit_id:currentUnit(),section_id:'map',action:'open'});
+    const summary=event.target.closest('details.schedule > summary');if(summary&&!summary.parentElement.open)window.OfferAnalytics?.event('payment_schedule_open',{project_id:offer.id,unit_id:currentUnit(),section_id:'payments',action:'open'});
+  },true);
+  function sync(lang,code,unit){syncing=true;try{const langButton=shadow.querySelector(`[data-language="${lang}"]`);if(langButton?.getAttribute('aria-pressed')!=='true')langButton?.click();const currencyButton=shadow.querySelector(`[data-currency-choice="${code}"]`);if(currencyButton?.getAttribute('aria-pressed')!=='true')currencyButton?.click();if(unit){const choice=shadow.querySelector(`.unit-options [data-unit="${CSS.escape(unit)}"]`);if(choice?.getAttribute('aria-pressed')!=='true')choice?.click();}}finally{syncing=false;}}
   sync(language,currency,unitId);
   return {root:shadow,sync,dispose(){shadow.querySelector('dialog[open]')?.close();document.body.classList.remove('viewer-open');for(const [name,handler,options]of listeners)window.removeEventListener(name,handler,options);host.remove();}};
 };

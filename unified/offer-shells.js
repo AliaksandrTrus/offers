@@ -64,7 +64,10 @@ window.OFFER_RENDERERS["lawncrest"]=function(document,window){
     data.gallery.forEach((p,index)=>{const b=button('thumb','',()=>{photoIndex=index;renderGallery();});b.dataset.photo=String(index);b.setAttribute('aria-label',local(p.caption));b.setAttribute('aria-pressed',String(photoIndex===index));const image=el('img');image.src=p.src;image.alt='';b.append(image);thumbs.append(b);});
     node.append(visual,caption);if(data.gallery.length>1)node.append(thumbs);return node;
   }
-  function renderGallery() {document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
+  let reportedPhotoIndex=0;
+  const report=(name,extra={})=>{try{window.offerAnalyticsEvent?.(name,{unit_id:data.units[unitIndex].id,...extra});}catch{}};
+  function reportPhoto(view_context){if(photoIndex!==reportedPhotoIndex){reportedPhotoIndex=photoIndex;report('photo_change',{section_id:'photos',action:'change',photo_index:photoIndex+1,view_context});}}
+  function renderGallery() {reportPhoto('gallery');document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
   function about() {
     const p=data.project, aside=el('aside','project-aside');aside.setAttribute('aria-label',t('about'));const copy=el('div','project-copy');
     if(p.counts.length || p.amenities.length || local(p.amenitiesNote) || local(p.handover?.value)) {
@@ -158,13 +161,13 @@ window.OFFER_RENDERERS["lawncrest"]=function(document,window){
   }
   function moveViewerPhoto(direction){
     if(!viewer.open||viewerGroup!=='gallery'||data.gallery.length<2)return;
-    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();
+    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();reportPhoto('viewer');
   }
   function openImage(opener){
     lastOpener=opener;viewerGroup=opener.id==='photo-open'?'gallery':'single';viewer.dataset.group=viewerGroup;
     const canNavigate=viewerGroup==='gallery'&&data.gallery.length>1;
     viewerPrevious.hidden=viewerNext.hidden=!canNavigate;viewerCounter.hidden=viewerGroup!=='gallery';
-    viewer.showModal();document.body.classList.add('viewer-open');
+    viewer.showModal();document.body.classList.add('viewer-open');if(viewerGroup==='gallery')report('photo_open',{section_id:'photos',action:'open',photo_index:photoIndex+1,view_context:'viewer'});else report('plan_open',{section_id:'apartments',action:'open',plan_type:opener.id==='floor-open'?'floor':'unit'});
     if(viewerGroup==='gallery')showViewerPhoto();else setViewerImage(opener.dataset.zoom,opener.dataset.caption);
     document.getElementById('viewer-close').focus();
   }
@@ -293,7 +296,10 @@ window.OFFER_RENDERERS["eira"]=function(document,window){
     data.gallery.forEach((p,index)=>{const b=button('thumb','',()=>{photoIndex=index;renderGallery();});b.dataset.photo=String(index);b.setAttribute('aria-label',local(p.caption));b.setAttribute('aria-pressed',String(photoIndex===index));const image=el('img');image.src=p.src;image.alt='';b.append(image);thumbs.append(b);});
     node.append(visual,caption);if(data.gallery.length>1)node.append(thumbs);return node;
   }
-  function renderGallery() {document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
+  let reportedPhotoIndex=0;
+  const report=(name,extra={})=>{try{window.offerAnalyticsEvent?.(name,{unit_id:data.units[unitIndex].id,...extra});}catch{}};
+  function reportPhoto(view_context){if(photoIndex!==reportedPhotoIndex){reportedPhotoIndex=photoIndex;report('photo_change',{section_id:'photos',action:'change',photo_index:photoIndex+1,view_context});}}
+  function renderGallery() {reportPhoto('gallery');document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
   function about() {
     const p=data.project, aside=el('aside','project-aside');aside.setAttribute('aria-label',t('about'));const copy=el('div','project-copy');
     if(p.counts.length || p.amenities.length || local(p.amenitiesNote) || local(p.handover?.value)) {
@@ -387,13 +393,13 @@ window.OFFER_RENDERERS["eira"]=function(document,window){
   }
   function moveViewerPhoto(direction){
     if(!viewer.open||viewerGroup!=='gallery'||data.gallery.length<2)return;
-    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();
+    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();reportPhoto('viewer');
   }
   function openImage(opener){
     lastOpener=opener;viewerGroup=opener.id==='photo-open'?'gallery':'single';viewer.dataset.group=viewerGroup;
     const canNavigate=viewerGroup==='gallery'&&data.gallery.length>1;
     viewerPrevious.hidden=viewerNext.hidden=!canNavigate;viewerCounter.hidden=viewerGroup!=='gallery';
-    viewer.showModal();document.body.classList.add('viewer-open');
+    viewer.showModal();document.body.classList.add('viewer-open');if(viewerGroup==='gallery')report('photo_open',{section_id:'photos',action:'open',photo_index:photoIndex+1,view_context:'viewer'});else report('plan_open',{section_id:'apartments',action:'open',plan_type:opener.id==='floor-open'?'floor':'unit'});
     if(viewerGroup==='gallery')showViewerPhoto();else setViewerImage(opener.dataset.zoom,opener.dataset.caption);
     document.getElementById('viewer-close').focus();
   }
@@ -524,7 +530,10 @@ window.OFFER_RENDERERS["coventry"]=function(document,window){
     data.gallery.forEach((p,index)=>{const b=button('thumb','',()=>{photoIndex=index;renderGallery();});b.dataset.photo=String(index);b.setAttribute('aria-label',local(p.caption));b.setAttribute('aria-pressed',String(photoIndex===index));const image=el('img');image.src=p.src;image.alt='';b.append(image);thumbs.append(b);});
     node.append(visual,caption);if(data.gallery.length>1)node.append(thumbs);return node;
   }
-  function renderGallery() {document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
+  let reportedPhotoIndex=0;
+  const report=(name,extra={})=>{try{window.offerAnalyticsEvent?.(name,{unit_id:data.units[unitIndex].id,...extra});}catch{}};
+  function reportPhoto(view_context){if(photoIndex!==reportedPhotoIndex){reportedPhotoIndex=photoIndex;report('photo_change',{section_id:'photos',action:'change',photo_index:photoIndex+1,view_context});}}
+  function renderGallery() {reportPhoto('gallery');document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
   function about() {
     const p=data.project, aside=el('aside','project-aside');aside.setAttribute('aria-label',t('about'));const copy=el('div','project-copy');
     if(p.counts.length || p.amenities.length || local(p.amenitiesNote) || local(p.handover?.value)) {
@@ -618,13 +627,13 @@ window.OFFER_RENDERERS["coventry"]=function(document,window){
   }
   function moveViewerPhoto(direction){
     if(!viewer.open||viewerGroup!=='gallery'||data.gallery.length<2)return;
-    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();
+    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();reportPhoto('viewer');
   }
   function openImage(opener){
     lastOpener=opener;viewerGroup=opener.id==='photo-open'?'gallery':'single';viewer.dataset.group=viewerGroup;
     const canNavigate=viewerGroup==='gallery'&&data.gallery.length>1;
     viewerPrevious.hidden=viewerNext.hidden=!canNavigate;viewerCounter.hidden=viewerGroup!=='gallery';
-    viewer.showModal();document.body.classList.add('viewer-open');
+    viewer.showModal();document.body.classList.add('viewer-open');if(viewerGroup==='gallery')report('photo_open',{section_id:'photos',action:'open',photo_index:photoIndex+1,view_context:'viewer'});else report('plan_open',{section_id:'apartments',action:'open',plan_type:opener.id==='floor-open'?'floor':'unit'});
     if(viewerGroup==='gallery')showViewerPhoto();else setViewerImage(opener.dataset.zoom,opener.dataset.caption);
     document.getElementById('viewer-close').focus();
   }
