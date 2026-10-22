@@ -1782,7 +1782,7 @@ body > .analytics-footer{width:min(1180px,calc(100% - 32px));margin:16px auto ca
   }
   function cancelTimers(){for(const h of timers.values())clearTimeout(h);timers.clear();}
   function stopSections(){cancelTimers();io?.disconnect();mo?.disconnect();io=mo=null;observedRoot=null;clearTimeout(refreshTimer);}
-  function visible(el){if(document.visibilityState!=='visible'||!el.isConnected||observedRoot?.querySelector('dialog[open]')||document.querySelector('#contact-dialog[open]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
+  function visible(el){if(document.visibilityState!=='visible'||!el.isConnected||observedRoot?.querySelector('dialog[open]')||document.querySelector('#viewer[open],#contact-dialog[open]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
   function refreshSections(){
     cancelTimers();io?.disconnect();io=null;
     if(!observedRoot||choice!=='granted'||context?.page!=='projects')return;
@@ -1860,6 +1860,8 @@ body > .analytics-footer{width:min(1180px,calc(100% - 32px));margin:16px auto ca
    if(summary&&!summary.parentElement.open)window.OfferAnalytics.event('payment_schedule_open',{unit_id:current(),section_id:'payments',action:'open'});
  },true);
  sync();window.OfferAnalytics.observe(overview);
+ const viewer=document.getElementById('viewer');
+ if(viewer)new MutationObserver(()=>document.dispatchEvent(new CustomEvent('offer:overlay-change'))).observe(viewer,{attributes:true,attributeFilter:['open']});
  new MutationObserver(sync).observe(overview,{childList:true,subtree:true});
 })();
 </script>

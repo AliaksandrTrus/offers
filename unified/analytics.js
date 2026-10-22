@@ -58,7 +58,7 @@
   }
   function cancelTimers(){for(const h of timers.values())clearTimeout(h);timers.clear();}
   function stopSections(){cancelTimers();io?.disconnect();mo?.disconnect();io=mo=null;observedRoot=null;clearTimeout(refreshTimer);}
-  function visible(el){if(document.visibilityState!=='visible'||!el.isConnected||observedRoot?.querySelector('dialog[open]')||document.querySelector('#contact-dialog[open]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
+  function visible(el){if(document.visibilityState!=='visible'||!el.isConnected||observedRoot?.querySelector('dialog[open]')||document.querySelector('#viewer[open],#contact-dialog[open]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
   function refreshSections(){
     cancelTimers();io?.disconnect();io=null;
     if(!observedRoot||choice!=='granted'||context?.page!=='projects')return;
