@@ -1812,7 +1812,10 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
     data.gallery.forEach((p,index)=>{const b=button('thumb','',()=>{photoIndex=index;renderGallery();});b.dataset.photo=String(index);b.setAttribute('aria-label',local(p.caption));b.setAttribute('aria-pressed',String(photoIndex===index));const image=el('img');image.src=p.src;image.alt='';b.append(image);thumbs.append(b);});
     node.append(visual,caption);if(data.gallery.length>1)node.append(thumbs);return node;
   }
-  function renderGallery() {document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
+  let reportedPhotoIndex=0;
+  const report=(name,extra={})=>{try{window.offerAnalyticsEvent?.(name,{unit_id:data.units[unitIndex].id,...extra});}catch{}};
+  function reportPhoto(view_context){if(photoIndex!==reportedPhotoIndex){reportedPhotoIndex=photoIndex;report('photo_change',{section_id:'photos',action:'change',photo_index:photoIndex+1,view_context});}}
+  function renderGallery() {reportPhoto('gallery');document.getElementById('photos').replaceWith(gallery());const strip=document.querySelector('.thumbs'), selected=strip?.querySelector('[aria-pressed="true"]');if(selected)strip.scrollLeft=Math.max(0,selected.offsetLeft-strip.offsetLeft-strip.clientWidth/2+selected.offsetWidth/2);}
   function about() {
     const p=data.project, aside=el('aside','project-aside');aside.setAttribute('aria-label',t('about'));const copy=el('div','project-copy');
     if(p.counts.length || p.amenities.length || local(p.amenitiesNote) || local(p.handover?.value)) {
@@ -1906,13 +1909,13 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   }
   function moveViewerPhoto(direction){
     if(!viewer.open||viewerGroup!=='gallery'||data.gallery.length<2)return;
-    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();
+    photoIndex=(photoIndex+direction+data.gallery.length)%data.gallery.length;showViewerPhoto();reportPhoto('viewer');
   }
   function openImage(opener){
     lastOpener=opener;viewerGroup=opener.id==='photo-open'?'gallery':'single';viewer.dataset.group=viewerGroup;
     const canNavigate=viewerGroup==='gallery'&&data.gallery.length>1;
     viewerPrevious.hidden=viewerNext.hidden=!canNavigate;viewerCounter.hidden=viewerGroup!=='gallery';
-    viewer.showModal();document.body.classList.add('viewer-open');
+    viewer.showModal();document.body.classList.add('viewer-open');if(viewerGroup==='gallery')report('photo_open',{section_id:'photos',action:'open',photo_index:photoIndex+1,view_context:'viewer'});else report('plan_open',{section_id:'apartments',action:'open',plan_type:opener.id==='floor-open'?'floor':'unit'});
     if(viewerGroup==='gallery')showViewerPhoto();else setViewerImage(opener.dataset.zoom,opener.dataset.caption);
     document.getElementById('viewer-close').focus();
   }
@@ -2034,4 +2037,156 @@ body.contact-open{overflow:hidden}body.contact-open .analytics-consent{visibilit
 </script>
 <script>(()=>{'use strict';if(!window.OfferContact)return;const data=JSON.parse(document.getElementById('offer-data').textContent),settings=data.contact;if(!settings?.projectId||!/^https:\/\//.test(settings.publicUrl))return;const overview=document.getElementById('overview');if(!overview||overview.hidden)return;const bar=document.getElementById('selection-bar'),bottom=bar.querySelector('[data-contact-open]'),button=document.createElement('button'),wrap=document.createElement('div');let key='';wrap.className='unit-price-contact';button.type='button';button.className='unit-discount-button';button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','contact-dialog');wrap.append(button);button.addEventListener('click',()=>window.OfferContact.open(button,'unit_price','discount'));function sync(){const price=document.querySelector('#unit-summary .price');if(price&&wrap.parentElement!==price)price.append(wrap);const language=document.documentElement.lang==='en'?'en':'ru',label=language==='en'?'Ask about a discount':'Узнать о скидке',question=language==='en'?'Ask a question':'Задать вопрос';if(button.textContent!==label)button.textContent=label;if(bottom.textContent!==question)bottom.textContent=question;const unit=document.querySelector('.unit-options [aria-pressed="true"]')?.dataset.unit||data.units[0]?.id||'',next=language+':'+unit;if(next!==key){key=next;window.OfferContact.update({page:'projects',project_id:settings.projectId,projectName:data.project.name,unit_id:unit,language,selectedProjects:[]});}}sync();bar.hidden=false;new MutationObserver(sync).observe(overview,{childList:true,subtree:true});})();</script>
 <!-- OFFER_CONTACT_END -->
+<!-- OFFER_ANALYTICS_START -->
+<meta name="offer-surface" content="standalone">
+<style>.analytics-consent[hidden],.analytics-storage-warning[hidden]{display:none!important}
+.analytics-consent{position:fixed;z-index:10000;left:50%;bottom:90px;transform:translateX(-50%);width:min(740px,calc(100% - 28px));box-sizing:border-box;border:1px solid #9eaa9d;border-left:4px solid #253d35;background:#f8f8f0;padding:16px 18px;box-shadow:0 5px 32px #10251b26;color:#253d35;font:13px/1.5 Arial,sans-serif;display:flex;gap:20px;align-items:center}
+.analytics-consent strong{font-size:15px}.analytics-consent p{margin:5px 0 0}.analytics-consent-actions{display:flex;gap:8px;flex-shrink:0}.analytics-consent button{font:inherit;border:1px solid #253d35;background:#fff;color:#253d35;padding:10px 13px;cursor:pointer}.analytics-consent button:focus-visible{outline:2px solid #a28d60;outline-offset:3px}.analytics-consent-actions button{min-height:44px}#analytics-allow{background:#253d35;color:#fff}#analytics-settings{margin-left:15px;text-decoration:underline;text-underline-offset:3px}.analytics-storage-warning{font-size:11px}
+@media(max-width:760px){.analytics-consent{bottom:86px;display:block;padding:12px;font-size:12px;max-height:calc(100dvh - 110px);overflow:auto}.analytics-consent-actions{margin-top:10px}.analytics-consent-actions button{flex:1}#analytics-settings{display:block;margin:10px 0 0;padding:5px 0;text-align:left}}
+
+.analytics-consent{bottom:calc(var(--selection-bar-height,72px) + 12px);max-height:calc(100dvh - var(--selection-bar-height,72px) - 30px);overflow:auto}#analytics-settings{min-height:44px;min-width:44px}.viewer-open .analytics-consent{display:none}
+body > .analytics-footer{width:min(1180px,calc(100% - 32px));margin:16px auto calc(var(--selection-bar-height,72px) + 24px)}
+</style>
+<script>// Basic consent: no Google script, cookies or analytics requests before opt-in.
+(() => {
+  'use strict';
+  if(window.OfferAnalytics)return;
+  const ID='G-X1ENMR8LBG',KEY='personal-offers:analytics-consent:v1',TTL=180*86400000;
+  const surface=document.querySelector('meta[name="offer-surface"]')?.content==='standalone'?'standalone':'unified';
+  const canonical=document.querySelector('link[rel="canonical"]')?.href||document.querySelector('meta[property="og:url"]')?.content||document.querySelector('meta[name="offer-contact-url"]')?.content;
+  const base=surface==='standalone'?canonical:'https://aliaksandrtrus.github.io/offers/unified/';
+  if(!base||!base.startsWith('https://'))return;
+  const campaigns=new URLSearchParams();
+  for(const k of ['utm_source','utm_medium','utm_campaign','utm_content']){
+    const v=new URL(location.href).searchParams.get(k);
+    if(v&&/^[a-z][a-z0-9_-]{0,63}$/.test(v))campaigns.set(k,v);
+  }
+  const debug=new URL(location.href).searchParams.get('ga_debug')==='1';
+  let choice=null,loaded=false,context=null,lastView='',previousLocation='',sectionKey='',language='ru';
+  let io=null,mo=null,observedRoot=null,refreshTimer=0;
+  const timers=new Map(),seen=new Set();
+  window['ga-disable-'+ID]=true;
+  function read(){try{const x=JSON.parse(localStorage.getItem(KEY));return x?.version===1&&Date.now()-x.at<TTL&&['granted','denied'].includes(x.choice)?x.choice:null;}catch{return null;}}
+  choice=read();
+  function remember(value){try{localStorage.setItem(KEY,JSON.stringify({version:1,choice:value,at:Date.now()}));return true;}catch{return false;}}
+  function safeRef(raw){try{const u=new URL(raw);return /^https?:$/.test(u.protocol)?u.origin+'/':'';}catch{return '';}}
+  function pageURL(ctx){const u=new URL(base);u.search=campaigns.toString();u.hash=surface==='standalone'?'':ctx.page==='compare'?'compare':ctx.page==='catalog'?'projects':'project='+ctx.project_id;return u.href;}
+  function params(extra={}){
+    const p={project_id:context?.page==='projects'?context.project_id:context?.page==='catalog'?'catalog':'comparison',unit_id:context?.unit_id||'',section_id:'',action:'',...extra,offer_surface:surface};
+    // All custom values originate in confirmed IDs or a fixed action vocabulary.
+    return Object.fromEntries(Object.entries(p).filter(([k,v])=>['project_id','unit_id','section_id','action','photo_index','view_context','plan_type','comparison_count','channel','contact_placement','contact_intent','offer_surface'].includes(k)&&['string','number'].includes(typeof v)));
+  }
+  function emit(name,extra){if(choice!=='granted'||!loaded)return;window.gtag('event',name,{...params(extra),send_to:ID,...(debug?{debug_mode:true}:{})});}
+  function boot(){
+    if(loaded||choice!=='granted')return;
+    // Consolidate old unified-only cookies before loading Google, preserving their values.
+    for(const name of ['_ga','_ga_X1ENMR8LBG']){
+      const item=document.cookie.split('; ').find(c=>c.startsWith(name+'='));
+      if(item)document.cookie=item+'; Path=/offers/; Max-Age=15552000; SameSite=Lax; Secure';
+      for(const domain of ['',location.hostname,'.'+location.hostname])document.cookie=name+'=; Max-Age=0; Path=/offers/unified/'+(domain?'; Domain='+domain:'')+'; SameSite=Lax';
+    }
+    loaded=true;window['ga-disable-'+ID]=false;
+    window.dataLayer=window.dataLayer||[];
+    window.gtag=function(){window.dataLayer.push(arguments);};
+    window.gtag('consent','default',{analytics_storage:'granted',ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied'});
+    window.gtag('js',new Date());
+    window.gtag('set',{offer_surface:surface});
+    const initial=context?{page_location:pageURL(context),page_title:context.title,page_referrer:safeRef(document.referrer)}:{};
+    window.gtag('config',ID,{send_page_view:false,allow_google_signals:false,allow_ad_personalization_signals:false,ads_data_redaction:true,cookie_domain:'none',cookie_path:'/offers/',offer_surface:surface,cookie_expires:15552000,...initial});
+    const script=document.createElement('script');script.async=true;script.id='offer-ga-tag';script.src='https://www.googletagmanager.com/gtag/js?id='+ID;document.head.append(script);
+    lastView='';sendView();refreshSections();
+  }
+  function sendView(){
+    if(choice!=='granted'||!loaded||!context)return;
+    const key=surface==='standalone'?'standalone:'+context.project_id:context.page==='compare'?'compare':context.page==='catalog'?'catalog':'projects:'+context.project_id;
+    if(lastView===key)return;
+    const url=pageURL(context),ref=previousLocation||safeRef(document.referrer);
+    window.gtag('set',{page_location:url,page_title:context.title,page_referrer:ref});
+    window.gtag('event','page_view',{...params({section_id:context.page==='compare'?'comparison':context.page==='catalog'?'catalog':'project',action:'view'}),page_location:url,page_title:context.title,page_referrer:ref,send_to:ID,...(debug?{debug_mode:true}:{})});
+    lastView=key;previousLocation=url;
+  }
+  function cancelTimers(){for(const h of timers.values())clearTimeout(h);timers.clear();}
+  function stopSections(){cancelTimers();io?.disconnect();mo?.disconnect();io=mo=null;observedRoot=null;clearTimeout(refreshTimer);}
+  function visible(el){if(document.visibilityState!=='visible'||!el.isConnected||observedRoot?.querySelector('dialog[open]')||document.querySelector('#contact-dialog[open]'))return false;const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth;}
+  function refreshSections(){
+    cancelTimers();io?.disconnect();io=null;
+    if(!observedRoot||choice!=='granted'||context?.page!=='projects')return;
+    const root=observedRoot;
+    io=new IntersectionObserver(entries=>{
+      for(const e of entries){const id=e.target.dataset.analyticsSection;if(seen.has(id))continue;
+        if(!e.isIntersecting||!visible(e.target)){if(timers.has(id))clearTimeout(timers.get(id));timers.delete(id);continue;}
+        if(timers.has(id))continue;
+        const viewKey=sectionKey;
+        timers.set(id,setTimeout(()=>{timers.delete(id);if(viewKey!==sectionKey||seen.has(id)||!visible(e.target)||choice!=='granted')return;seen.add(id);emit('section_view',{section_id:id,action:'view'});},1000));
+      }
+    },{threshold:0});
+    for(const [id,selector]of [['photos','#photos'],['description','.project-aside'],['apartments','#apartments'],['payments','#payments'],['map','#location']]){
+      const el=root.querySelector(selector);if(el&&!seen.has(id)){el.dataset.analyticsSection=id;io.observe(el);}
+    }
+  }
+  function observe(root){
+    if(observedRoot===root)return;
+    stopSections();if(!root)return;observedRoot=root;
+    mo=new MutationObserver(()=>{clearTimeout(refreshTimer);refreshTimer=setTimeout(refreshSections,0);});
+    mo.observe(root,{childList:true,subtree:true,attributes:true,attributeFilter:['open']});refreshSections();
+  }
+  function view(ctx){
+    language=ctx.language||language;
+    const key=ctx.page==='compare'?'compare':ctx.page==='catalog'?'catalog':'projects:'+ctx.project_id;
+    if(key!==sectionKey){sectionKey=key;seen.clear();cancelTimers();}
+    context=ctx;updateConsentText();sendView();
+    if(choice==='granted'&&!loaded)boot();
+  }
+  function eraseCookies(){
+    for(const name of ['_ga','_ga_X1ENMR8LBG'])for(const p of new Set(['/','/offers/','/offers/unified/',new URL(base).pathname,location.pathname]))for(const domain of ['',location.hostname,'.'+location.hostname])document.cookie=name+'=; Max-Age=0; path='+p+(domain?'; domain='+domain:'')+'; SameSite=Lax';
+  }
+  function decide(value){
+    const wasLoaded=loaded;choice=value;const saved=remember(value);document.getElementById('analytics-consent').hidden=true;
+    document.getElementById('analytics-storage-warning').hidden=saved;
+    if(value==='granted'){boot();return;}
+    window['ga-disable-'+ID]=true;stopSections();eraseCookies();
+    // A loaded tag cannot be unloaded reliably. Reload after withdrawal, without
+    // a consent-update ping, to stop its timers as well as our event handlers.
+    if(wasLoaded){if(!saved){try{sessionStorage.setItem(KEY,'denied');}catch{}}location.reload();}
+  }
+  const words={ru:{title:'Аналитика посещений',body:'Разрешить Google Analytics использовать аналитические cookies для статистики посещений и действий? Имена и контакты не передаются. Можно отказаться — офферы останутся доступны.',yes:'Разрешить',no:'Отказаться',settings:'Настройки аналитики',status:'Решение сохранено',warning:'Браузер не сохраняет настройку. В текущей вкладке ваш выбор действует; после нового открытия согласие может понадобиться снова.'},en:{title:'Visit analytics',body:'Allow Google Analytics to use analytics cookies for visitor and interaction statistics? Names and contact details are not sent. You can decline and continue viewing all offers.',yes:'Allow',no:'Decline',settings:'Analytics settings',status:'Preference saved',warning:'Your browser cannot save this preference. It applies in this tab; you may be asked again on a new visit.'}};
+  function updateConsentText(){const w=words[language]||words.ru;for(const [id,key]of [['analytics-consent-title','title'],['analytics-consent-text','body'],['analytics-allow','yes'],['analytics-decline','no'],['analytics-settings','settings'],['analytics-storage-warning','warning']]){const el=document.getElementById(id);if(el)el.textContent=w[key];}}
+  const panel=document.createElement('section');panel.id='analytics-consent';panel.className='analytics-consent';panel.setAttribute('role','region');panel.setAttribute('aria-labelledby','analytics-consent-title');panel.innerHTML='<div><strong id="analytics-consent-title"></strong><p id="analytics-consent-text"></p></div><div class="analytics-consent-actions"><button id="analytics-allow" type="button"></button><button id="analytics-decline" type="button"></button></div>';
+  panel.hidden=choice!==null;document.body.append(panel);
+  const footer=document.querySelector('footer')||document.body.appendChild(document.createElement('footer'));footer.classList.add('analytics-footer');
+  const settings=document.createElement('button');settings.type='button';settings.id='analytics-settings';settings.className='text-button';footer.append(settings);
+  const warning=document.createElement('p');warning.id='analytics-storage-warning';warning.className='analytics-storage-warning';warning.hidden=true;footer.append(warning);
+  settings.addEventListener('click',()=>{panel.hidden=false;document.getElementById('analytics-decline').focus({preventScroll:true});});
+  document.getElementById('analytics-allow').addEventListener('click',()=>decide('granted'));
+  document.getElementById('analytics-decline').addEventListener('click',()=>decide('denied'));
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')cancelTimers();else refreshSections();});
+  window.addEventListener('storage',event=>{if(event.key===KEY){const latest=read();if(choice==='granted'&&latest!=='granted'){window['ga-disable-'+ID]=true;location.reload();}else{choice=latest;panel.hidden=choice!==null;if(choice==='granted')boot();else{stopSections();eraseCookies();}}}});
+  try{if(sessionStorage.getItem(KEY)==='denied'){sessionStorage.removeItem(KEY);choice='denied';panel.hidden=true;}}catch{}
+  document.addEventListener('offer:overlay-change',refreshSections);
+  window.OfferAnalytics={view,observe,event:emit,unit(id){if(context?.page==='projects')context.unit_id=id;}};updateConsentText();
+})();
+</script>
+<script>// Adapter for one confirmed offer. The unified builder removes this entire block.
+(() => {
+ 'use strict';
+ if(window.__standaloneAnalyticsMounted||!window.OfferAnalytics)return;
+ const node=document.getElementById('offer-data');if(!node)return;
+ const data=JSON.parse(node.textContent),settings=data.contact,overview=document.getElementById('overview');
+ if(!settings?.projectId||!/^https:\/\//.test(settings.publicUrl)||!overview||overview.hidden)return;
+ window.__standaloneAnalyticsMounted=true;
+ const current=()=>document.querySelector('.unit-options [aria-pressed="true"]')?.dataset.unit||data.units[0].id;
+ function sync(){window.OfferAnalytics.view({page:'projects',project_id:settings.projectId,unit_id:current(),title:data.project.name+' · Project',language:document.documentElement.lang==='en'?'en':'ru'});}
+ window.offerAnalyticsEvent=(name,extra={})=>window.OfferAnalytics.event(name,{project_id:settings.projectId,...extra});
+ document.addEventListener('click',event=>{
+   const b=event.target.closest('[data-unit]');
+   if(b&&b.dataset.unit!==current()) {window.OfferAnalytics.unit(b.dataset.unit);window.OfferAnalytics.event('unit_select',{project_id:settings.projectId,unit_id:b.dataset.unit,section_id:'apartments',action:'select'});}
+   if(event.target.closest('.map-link'))window.OfferAnalytics.event('map_open',{unit_id:current(),section_id:'map',action:'open'});
+   const summary=event.target.closest('details.schedule > summary');
+   if(summary&&!summary.parentElement.open)window.OfferAnalytics.event('payment_schedule_open',{unit_id:current(),section_id:'payments',action:'open'});
+ },true);
+ sync();window.OfferAnalytics.observe(overview);
+ new MutationObserver(sync).observe(overview,{childList:true,subtree:true});
+})();
+</script>
+<!-- OFFER_ANALYTICS_END -->
 </body></html>
