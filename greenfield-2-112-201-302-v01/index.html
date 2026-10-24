@@ -3731,6 +3731,13 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
  .unit-summary-header .price{grid-template-columns:minmax(0,1fr) 88px;column-gap:6px}
  .unit-summary-header .price>.unit-price-rate{font-size:9px}
 }
+
+
+/* PRESENTATION_V17: desktop selectors contain category, unit and total price only. */
+@media(min-width:761px){
+ .unit-options .unit-option .unit-area-primary,.unit-options .unit-option .unit-area-secondary,.unit-options .unit-option .unit-size,.unit-options .unit-option .unit-description,.unit-options .unit-option .unit-selection-rate{display:none}
+ .unit-summary-header .price>.unit-price-rate{display:block;font-size:11px;line-height:1.5;color:var(--muted);margin:5px 0 0}
+}
 </style></head><body>
 <p id="template-status" class="page" role="status">Шаблон не заполнен. Данные нового предложения добавляет помощник по рабочему промпту.</p>
 <noscript><p class="page">Для просмотра предложения включите JavaScript. / Enable JavaScript to view the offer.</p></noscript>
