@@ -20,7 +20,7 @@ window.mountLocalOffer=function({host,offer,language,currency,unitId,onUnit}){
   function placeContact(){const price=shadow.querySelector('#unit-summary .price');if(price&&contact.parentElement!==price)price.append(contact);}
   placeContact();const contactObserver=new MutationObserver(placeContact);contactObserver.observe(shadow,{childList:true,subtree:true});
   if(shadow.getElementById('overview').hidden)throw Error('Verified offer did not pass presentation validation');
-  shadow.addEventListener('click',event=>{const b=event.target.closest('[data-unit]');if(b){onUnit(b.dataset.unit);if(!syncing)window.OfferAnalytics?.unit(b.dataset.unit);if(!syncing&&b.getAttribute('aria-pressed')!=='true')window.OfferAnalytics?.event('unit_select',{project_id:offer.id,unit_id:b.dataset.unit,section_id:'apartments',action:'select'});}
+  shadow.addEventListener('click',event=>{const b=event.target.closest('[data-unit]');if(b){onUnit(b.dataset.unit,{userInitiated:!syncing});if(!syncing)window.OfferAnalytics?.unit(b.dataset.unit);if(!syncing&&b.getAttribute('aria-pressed')!=='true')window.OfferAnalytics?.event('unit_select',{project_id:offer.id,unit_id:b.dataset.unit,section_id:'apartments',action:'select'});}
     if(syncing)return;
     const currentUnit=()=>shadow.querySelector('.unit-options [aria-pressed="true"]')?.dataset.unit||data.units[0].id;
     if(event.target.closest('.map-link'))window.OfferAnalytics?.event('map_open',{project_id:offer.id,unit_id:currentUnit(),section_id:'map',action:'open'});

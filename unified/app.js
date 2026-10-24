@@ -56,32 +56,95 @@
   function projectView(){return '<a class="back" href="#projects">'+t('back')+'</a>'+picker()+`<div class="project-region"><div class="selected-project-tools"><button class="button" data-select="${projectId}" aria-pressed="${selected.has(projectId)}">${selected.has(projectId)?(language==='ru'?'✓ В сравнении':'✓ Selected'):(language==='ru'?'В сравнение':'Compare')}</button></div><div id="active-offer" class="offer-host" role="region" aria-label="${escape(projectName(offers.find(o=>o.id===projectId)))}"></div></div>`;}
   function homeView(){return `<section class="home-placeholder"><p class="home-label">${t('home')}</p><h1>${t('homeTitle')}</h1><div class="profile-slot">${language==='ru'?'Фотография':'Photograph'}</div><p>${t('homeText')}</p><a class="button primary" href="#projects">${t('catalog')}</a></section>`;}
 
-  function fact(label,value){return `<div><dt>${escape(label)}</dt><dd${value?'':' class="missing"'}>${escape(value||t('missing'))}</dd></div>`;}
-  function unit(u){
-    const p=u.payments,stages=p?.stages??[],start=stages[0];
-    return `<section class="unit-card" data-unit="${escape(u.id)}"><div class="unit-heading"><h3>${escape(local(u.title)||u.id)}</h3><span class="area">${escape(local(u.choiceArea)||t('missing'))}</span></div>
-    <div class="unit-layout">${escape(local(u.choiceSubtitle)||t('missing'))}</div><div class="price-label">${t('price')}</div><p class="unit-price">${money(u.price)}</p>
-    <p class="payment-summary">${escape(local(p?.summary)||t('missing'))}</p>
-    ${stages.length?`<ul class="stages">${stages.map(s=>`<li><b>${escape(local(s.label))}</b><span>${escape(local(s.subtitle))}</span></li>`).join('')}</ul>`:''}
-    ${start?`<div class="initial">${t('initial')}${money(start.amount)}</div>`:`<p class="missing">${t('initial')}: ${t('missing')}</p>`}
-    ${p?.extra&&rich(p.extra)?`<p class="extra">${rich(p.extra)}</p>`:''}</section>`;
+  const compareMedia=window.matchMedia('(max-width:760px)');
+  const categories=[['minimum_price','Минимальная цена','Minimum price'],['value_per_m2','Выгодный метр','Best area value'],['premium','Премиум','Premium']];
+  const categoryName=key=>{const c=categories.find(x=>x[0]===key);return c?.[language==='ru'?1:2]||t('missing');};
+  function metricValue(u){
+    const sqft=u.selection?.totalAreaSqft,m2=u.selection?.totalAreaM2;
+    const valid=Number.isFinite(sqft)&&sqft>0&&Number.isFinite(m2)&&m2>0&&Number.isFinite(u.price);
+    if(!valid)return {area:t('missing'),rate:t('missing')};
+    const fmt=n=>new Intl.NumberFormat(language==='ru'?'ru-RU':'en-GB',{minimumFractionDigits:1,maximumFractionDigits:1}).format(n);
+    return {area:fmt(currency==='AED'?sqft:m2)+' '+(currency==='AED'?'sq ft':language==='ru'?'м²':'m²'),rate:fmt(currency==='AED'?u.price/sqft:u.price/3.66/m2)+' '+currency+'/'+(currency==='AED'?'sq ft':language==='ru'?'м²':'m²')};
   }
-  function comparisonCard(o){const p=o.data.project;return `<article class="project-card compare-card" data-compare-project="${o.id}"><div class="compare-overview">
-    <img class="project-image compare-image" src="${escape(o.image)}" alt="${escape(projectName(o)+' · '+t('rendering'))}" width="760" height="330"><p class="image-note">${t('rendering')}</p>
-    <div class="compare-header"><h2>${escape(projectName(o))}</h2><button class="text-button" data-remove="${o.id}" aria-label="${escape(t('cancel')+' · '+projectName(o))}">${t('remove')} ×</button></div>
-    <dl class="compare-facts">${fact(t('area'),local(districtValue(o)))}${fact(t('developer'),local(p.developer))}${fact(t('handover'),handover(o))}</dl></div>
-    <div class="compare-units"><p class="units-heading">${t('represented')} · ${o.data.units.length}</p><div class="units">${o.data.units.map(unit).join('')}</div></div><div class="offer-bottom">${offerLink(o)}</div></article>`;}
-  function comparison(){const chosen=offers.filter(o=>selected.has(o.id));return `<a class="back" href="#projects">${t('back')}</a><section class="intro compare-intro"><h1>${t('comparison')} · ${chosen.length}</h1><p>${t('comparisonLead')}</p></section>
-    ${chosen.length?`<section class="compare-grid" data-count="${chosen.length}" aria-label="${t('comparison')}">${chosen.map(comparisonCard).join('')}</section><p class="comparison-note">${t('note')}</p>`:`<section class="empty"><h2>${t('emptyTitle')}</h2><p>${t('emptyText')}</p><a class="button primary" href="#projects">${t('choose')}</a></section>`}`;}
+  function compactPlan(u,o){
+    const p=u.payments,s=p?.stages;
+    if(!Array.isArray(s)||!s.length)return [t('missing')];
+    const first=local(s[0].label),last=s.at(-1),after=local(last.subtitle),title=local(last.title);
+    const monthly=(last.schedule||p.schedule||[]).find(r=>/ежемесячно|monthly/iu.test(local(r.note)));
+    const handoverText=localIn(o?.data.project.handover?.value,'en');
+    const months=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+    const quarter=handoverText.match(/Q([1-4])\s+(20\d{2})/u),month=handoverText.match(/([A-Za-z]+)\s+(20\d{2})/u);
+    const monthIndex=month?months.indexOf(month[1].slice(0,3).toLowerCase()):-1;
+    const handoverEnd=quarter?Date.UTC(+quarter[2],+quarter[1]*3,0):monthIndex>=0?Date.UTC(+month[2],monthIndex+1,0):NaN;
+    const date=localIn(monthly?.label,'en').match(/(\d{1,2})\s+([A-Za-z]+)\s+(20\d{2})/u),startMonth=date?months.indexOf(date[2].slice(0,3).toLowerCase()):-1;
+    const datedAfter=Number.isFinite(handoverEnd)&&startMonth>=0&&Date.UTC(+date[3],startMonth,+date[1])>handoverEnd;
+    const lines=[];
+    // Derive percentages, dates and frequencies from the same offer-data used by the full offer.
+    const purchase=language==='ru'?'при покупке':'on purchase';
+    lines.push(first+' '+(/первый взнос|бронирован|down payment|booking|reservation|initial/iu.test(local(s[0].subtitle)+' '+local(s[0].title))?purchase:local(s[0].subtitle)||t('missing')));
+    if(s.length===3&&(/после сдачи|after handover/iu.test(after)||datedAfter)){
+      const middle=s[1],note=local(middle.note);
+      if(/30\s*(дней|days)/iu.test(note)){
+        for(const r of middle.rows||[]){
+          const label=local(r.label),share=label.match(/\d+(?:[.,]\d+)?\s*%/u)?.[0];
+          if(/30\s*(дней|days)/iu.test(label))lines.push(share+' · '+(language==='ru'?'через 30 дн.':'in 30 days'));
+          else {const compact=label.replace(/Сентябрь|September/iu,'09.').replace(/Май|May/iu,'05.').replace(/декабрь|December/iu,'12.').replace(/(09\.|05\.|12\.)\s+(20\d\d)/u,'$1$2');lines.push(compact);}
+        }
+      }else lines.push(local(middle.label)+' '+(language==='ru'?'до / при сдаче':'before / on handover'));
+      const share=title.match(/(\d+(?:[.,]\d+)?)\s*%/u)?.[1];
+      if(share&&/раз в полгода|every six months/iu.test(title))lines.push((last.rows||[]).length+' × '+share+'% '+(language==='ru'?'раз в полгода после сдачи':'every 6 months after handover'));
+      else if(share&&/раз в год|once a year/iu.test(title))lines.push((last.rows||[]).length+' × '+share+'% '+(language==='ru'?'ежегодно после сдачи':'annually after handover'));
+      else {
+        const count=local(monthly?.note).match(/(\d+)\s*(платеж|payment)/iu)?.[1];
+        const monthlyShare=local(monthly?.share).match(/(\d+(?:[.,]\d+)?)\s*%/u)?.[1];
+        if(count&&monthlyShare)lines.push(count+' × '+monthlyShare+'% '+(language==='ru'?'после сдачи':'after handover'));
+        else lines.push(local(last.label)+' · '+after+' · '+title);
+      }
+    }else for(const stage of s.slice(1))lines.push(local(stage.label)+' · '+local(stage.subtitle));
+    return lines;
+  }
+  function comparison(){
+    const chosen=offers.filter(o=>selected.has(o.id)),mobile=compareMedia.matches;
+    const count=chosen.length,n=mobile?1:3;
+    const ru=language==='ru';
+    const intro=`<a class="back" href="#projects">${t('back')}</a><section class="intro matrix-intro"><div><h1>${ru?'Сравнение':'Comparison'} <span>· ${count}</span></h1><p>${ru?'Проекты сверху · категории слева':'Projects across · categories down'}</p></div>${count?`<button class="text-button matrix-clear" data-clear>${t('clear')}</button>`:''}</section>`;
+    if(!count)return intro+`<section class="empty"><h2>${t('emptyTitle')}</h2><p>${t('emptyText')}</p><a class="button primary" href="#projects">${t('choose')}</a></section>`;
+    const metricHeaders=[ru?'Цена':'Price',ru?'Площадь':'Area',ru?'Ставка':'Rate'];
+    const categoryHeader=ru?'Категория':'Category';
+    const head=`<thead><tr><th scope="col" class="matrix-category" rowspan="${mobile?1:2}">${categoryHeader}</th>${chosen.map(o=>`<th scope="colgroup" colspan="${n}" class="matrix-project"><a class="matrix-project-link" data-compare-project-link="${o.id}" href="#project=${encodeURIComponent(o.id)}">${escape(projectName(o))}</a><span class="matrix-district">${escape(local(districtValue(o)))}</span><button class="matrix-remove" type="button" data-remove="${o.id}" aria-label="${escape(t('remove')+' · '+projectName(o))}">×</button></th>`).join('')}</tr>${mobile?'':`<tr class="matrix-subheads">${chosen.map(()=>metricHeaders.map(h=>`<th scope="col">${h}</th>`).join('')).join('')}</tr>`}</thead>`;
+    const priceCell=(o,u)=>`<a class="matrix-price-link${currency==='AED'&&!Number.isInteger(u.price)?' has-decimals':''}" data-compare-offer="${o.id}" data-compare-unit="${escape(u.id)}" href="#project=${encodeURIComponent(o.id)}&unit=${encodeURIComponent(u.id)}" aria-label="${escape((ru?'Открыть квартиру ':'Open apartment ')+u.id+' · '+projectName(o))}">${money(u.price)}</a>`;
+    const body=categories.map(([key])=>`<tr class="matrix-unit-row" data-category="${key}"><th scope="row" class="matrix-category">${categoryName(key)}</th>${chosen.map(o=>{const u=o.data.units.find(x=>x.selection?.category===key);if(!u)return `<td colspan="${n}" class="matrix-missing">${t('missing')}</td>`;const m=metricValue(u);return mobile?`<td class="matrix-values" data-matrix-project="${o.id}" data-matrix-unit="${escape(u.id)}">${priceCell(o,u)}<span class="matrix-area">${escape(m.area)}</span><span class="matrix-rate">${escape(m.rate)}</span></td>`:`<td class="matrix-price" data-matrix-project="${o.id}" data-matrix-unit="${escape(u.id)}">${priceCell(o,u)}</td><td class="matrix-area-cell"><span class="matrix-area">${escape(m.area)}</span></td><td class="matrix-rate-cell"><span class="matrix-rate">${escape(m.rate)}</span></td>`;}).join('')}</tr>`).join('');
+    const payment=`<tr class="matrix-payment-row"><th scope="row" class="matrix-category">${ru?'План оплаты':'Payment plan'}</th>${chosen.map(o=>{const plans=o.data.units.map(u=>({u,lines:compactPlan(u,o)})),shared=plans.every(p=>JSON.stringify(p.lines)===JSON.stringify(plans[0].lines));return `<td colspan="${n}" class="matrix-payment" data-payment-project="${o.id}">${shared?plans[0].lines.map(s=>`<span>${escape(s)}</span>`).join(''):plans.map(p=>`<div><strong>${escape(categoryName(p.u.selection?.category))}</strong>${p.lines.map(s=>`<span>${escape(s)}</span>`).join('')}</div>`).join('')}</td>`;}).join('')}</tr>`;
+    return intro+`<div class="matrix-scroll${mobile&&count>3?' is-wide':''}" tabindex="0" aria-label="${ru?'Таблица сравнения проектов':'Project comparison table'}"><table class="comparison-matrix ${mobile?'is-mobile':'is-desktop'}" data-project-count="${count}" style="--project-count:${count}"><colgroup><col class="matrix-category-col">${chosen.map(()=>mobile?'<col class="matrix-project-col">':'<col class="matrix-price-col"><col class="matrix-area-col"><col class="matrix-rate-col">').join('')}</colgroup>${head}<tbody>${body}${payment}</tbody></table></div>${mobile&&count>3?`<p class="matrix-swipe-hint">${ru?'← Листайте проекты; категории закреплены →':'← Scroll projects; categories stay fixed →'}</p>`:''}<p class="matrix-note">${ru?'Нажмите проект или цену. Сборы — дополнительно. Полный график — в оффере.':'Select a project or price. Fees are additional. Full schedule is in the offer.'}</p>`;
+  }
+  compareMedia.addEventListener('change',()=>{if(location.hash==='#compare')render();});
+
   function syncContact(page){window.OfferContact?.update({page,language,project_id:page==='projects'?projectId:page==='compare'?'comparison':'catalog',projectName:page==='projects'?projectName(offers.find(o=>o.id===projectId)):'',unit_id:page==='projects'?(unitChoice[projectId]||offers.find(o=>o.id===projectId).data.units[0].id):'',selectedProjects:offers.filter(o=>selected.has(o.id)).map(o=>({id:o.id,name:projectName(o)}))});}
+  let pendingCompareSelection=null;
+  function projectRoute(){
+    if(!location.hash.startsWith('#project='))return {project:null,unit:null};
+    const values=new URLSearchParams(location.hash.slice(1));return {project:values.get('project'),unit:values.get('unit')};
+  }
+  function focusRouteUnit(){
+    const r=projectRoute();if(!r.unit||!offers.find(o=>o.id===r.project)?.data.units.some(u=>u.id===r.unit))return;
+    const summary=mounted?.root.querySelector('#unit-summary');if(!summary)return;
+    const heading=summary.querySelector('h2,h3')||summary;heading.setAttribute('tabindex','-1');
+    summary.scrollIntoView({block:'start',behavior:'instant'});heading.focus({preventScroll:true});
+  }
+  document.addEventListener('click',event=>{
+    const link=event.target.closest('a[data-compare-unit]');if(!link||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+    pendingCompareSelection={project_id:link.dataset.compareOffer,unit_id:link.dataset.compareUnit};
+  });
   function render(){
     // A plain shared URL always opens all projects, regardless of a saved selection.
     if(['#home','#catalog'].includes(location.hash))history.replaceState(null,'','#projects');
-    const target=location.hash.startsWith('#project=')?location.hash.slice(9):null;
+    const route=projectRoute(),target=route.project;
+    const unknownUnit=known.has(target)&&route.unit!==null&&!offers.find(o=>o.id===target).data.units.some(u=>u.id===route.unit);
+    if(known.has(target)&&route.unit!==null&&!unknownUnit)unitChoice[target]=route.unit;
     const unknownProject=target!==null&&!known.has(target);
     if(known.has(target)){projectId=target;district=districtKey(offers.find(o=>o.id===projectId));persist();}
     const page=location.hash==='#compare'?'compare':known.has(target)?'projects':'catalog';
-    document.documentElement.lang=language;
+    document.documentElement.lang=language;document.body.dataset.screen=page;
     const active=offers.find(o=>o.id===projectId);
     document.querySelector('.brand').innerHTML=`<strong>${t('profile')}</strong><span>${t('homeBroker')}</span>`;
     document.querySelector('.brand').setAttribute('aria-label',t('catalog'));
@@ -97,17 +160,24 @@
       mounted?.dispose();mounted=null;
       main.innerHTML=page==='projects'?projectView():page==='compare'?`<div class="comparison">${comparison()}</div>`:catalogView();
       if(page==='projects'){
-        mounted=window.mountLocalOffer({host:document.getElementById('active-offer'),offer:active,language,currency,unitId:unitChoice[projectId],onUnit:id=>{unitChoice[projectId]=id;persist();window.OfferContact?.unit(id);}});mounted.id=projectId;
+        mounted=window.mountLocalOffer({host:document.getElementById('active-offer'),offer:active,language,currency,unitId:unitChoice[projectId],onUnit:(id,meta)=>{unitChoice[projectId]=id;persist();if(meta?.userInitiated)history.replaceState(null,'','#project='+encodeURIComponent(projectId)+'&unit='+encodeURIComponent(id));window.OfferContact?.unit(id);}});mounted.id=projectId;
       }
     }
     bar.hidden=page==='home';bar.setAttribute('aria-label',t('selection'));
     bar.innerHTML=`<div class="selection-text"><strong>${t('projects')}: ${selected.size}</strong><span>${memoryOnly?(language==='ru'?'В текущей вкладке':'In this tab'):t('selectionHint')}</span></div><div class="bar-actions"><button class="button contact-trigger" type="button" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog"><span class="contact-desktop-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span><span class="contact-mobile-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span></button>${selected.size?`<button class="text-button" data-clear>${t('clear')}</button>`:''}<a class="button primary" data-compare href="#compare">${t('compare')} · ${selected.size}</a></div>`;
-    const notice=document.getElementById('storage-notice');notice.textContent=unknownProject?t('unknownProject'):memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');notice.classList.toggle('warning',memoryOnly||invalidSaved||unknownProject);
+    const notice=document.getElementById('storage-notice');notice.textContent=unknownProject?t('unknownProject'):unknownUnit?(language==='ru'?'Квартира по этой ссылке не найдена. Проверьте номер или выберите квартиру ниже.':'The apartment in this link was not found. Check the number or choose an apartment below.'):memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');notice.classList.toggle('warning',memoryOnly||invalidSaved||unknownProject||unknownUnit);
     document.getElementById('source-note').textContent=(language==='ru'?'Данные из проверенных офферов · ':'Verified offer data · ')+snapshot.verifiedDate;
     document.title=(page==='projects'?projectName(active):page==='catalog'?t('catalogTitle'):t('comparison'))+' · '+t('profile');
     window.OfferAnalytics?.view({page,project_id:page==='catalog'?'catalog':projectId,unit_id:page==='projects'?(unitChoice[projectId]||active.data.units[0].id):'',title:page==='projects'?projectName(active)+' · Project':page==='catalog'?'All projects':'Project comparison',language});
     window.OfferAnalytics?.observe(page==='projects'?mounted.root:null);
     syncContact(page);
+    if(pendingCompareSelection){
+      const action=pendingCompareSelection;pendingCompareSelection=null;
+      if(page==='projects'&&action.project_id===projectId&&action.unit_id===unitChoice[projectId]){
+        window.OfferAnalytics?.unit(action.unit_id);
+        window.OfferAnalytics?.event('unit_select',{...action,section_id:'apartments',action:'select'});
+      }
+    }
   }
 
   function navigateProject(id){if(!known.has(id))return;const hash='#project='+id;if(location.hash===hash)render();else location.hash=hash;}
@@ -124,6 +194,6 @@
     else if(b.hasAttribute('data-clear')){if(selected.size)window.OfferAnalytics?.event('comparison_change',{project_id:'comparison',section_id:'comparison',action:'clear',comparison_count:selected.size});selected.clear();persist();render();announce('cleared');}
   });
   main.addEventListener('toggle',event=>{if(event.target.matches('details.project-picker')&&event.target.isConnected){pickerOpen=event.target.open;}},true);
-  window.addEventListener('hashchange',()=>{render();main.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});});
-  readSaved();render();
+  window.addEventListener('hashchange',()=>{render();if(projectRoute().unit)focusRouteUnit();else{main.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}});
+  readSaved();render();focusRouteUnit();
 })();
