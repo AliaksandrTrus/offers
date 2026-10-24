@@ -160,7 +160,7 @@
       mounted?.dispose();mounted=null;
       main.innerHTML=page==='projects'?projectView():page==='compare'?`<div class="comparison">${comparison()}</div>`:catalogView();
       if(page==='projects'){
-        mounted=window.mountLocalOffer({host:document.getElementById('active-offer'),offer:active,language,currency,unitId:unitChoice[projectId],onUnit:(id,meta)=>{unitChoice[projectId]=id;persist();if(meta?.userInitiated)history.replaceState(null,'','#project='+encodeURIComponent(projectId)+'&unit='+encodeURIComponent(id));window.OfferContact?.unit(id);}});mounted.id=projectId;
+        mounted=window.mountLocalOffer({host:document.getElementById('active-offer'),offer:active,language,currency,unitId:unitChoice[projectId],onCurrency:code=>{const position={top:window.scrollY,left:window.scrollX,behavior:"instant"};currency=code;persist();render();mounted.root.querySelector(`.unit-price-currency [data-currency-choice="${code}"]`)?.focus({preventScroll:true});mounted.root.querySelector("#unit-summary").getBoundingClientRect();window.scrollTo(position);},onUnit:(id,meta)=>{unitChoice[projectId]=id;persist();if(meta?.userInitiated)history.replaceState(null,'','#project='+encodeURIComponent(projectId)+'&unit='+encodeURIComponent(id));window.OfferContact?.unit(id);}});mounted.id=projectId;
       }
     }
     bar.hidden=page==='home';bar.setAttribute('aria-label',t('selection'));

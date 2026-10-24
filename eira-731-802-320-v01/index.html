@@ -1761,6 +1761,39 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
 /* Both source areas and rates; rate hierarchy follows currency. */
 .unit-choice{width:100%;min-width:0}.unit-options{grid-template-columns:repeat(4,minmax(0,1fr))}.unit-option{min-width:0;overflow-wrap:anywhere;min-height:82px}.unit-option .unit-category{display:block;font-size:11px;font-weight:500;line-height:1.4;margin-bottom:7px}.unit-option .unit-number{display:block}.unit-area-primary,.unit-area-secondary{display:block;line-height:1.45}.unit-area-primary{font-size:12px}.unit-area-secondary{font-size:10px;opacity:.78}.unit-option .unit-selection-price{display:block;font-size:12px;margin-top:7px}.unit-selection-rate{display:block;font-size:10px;line-height:1.5;margin-top:3px}.rate-primary{font-weight:500}.unit-request-view{display:flex;align-items:center;justify-content:center;text-align:center;font-size:12px;color:var(--green,#253d35);background:#e9ece4;border-style:dashed;min-height:44px}.unit-request-view:focus-visible{outline:2px solid #253d35;outline-offset:3px}@media(max-width:760px){.unit-options{grid-template-columns:repeat(2,minmax(0,1fr))}.unit-choice{width:100%}.unit-option{padding:10px}.unit-option .unit-number{font-size:20px}.unit-option .unit-size{font-size:10px}.unit-request-view{font-size:11px}}
 
+
+/* PRESENTATION_V16: accepted mobile interface, 24 October 2026. */
+.unit-price-currency,.mobile-unit-type,.unit-price-rate{display:none}
+@media(max-width:760px){
+ .unit-options{grid-template-columns:minmax(0,1fr);gap:6px}
+ .unit-options .unit-option:not(.unit-request-view){display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:12px;row-gap:0;min-height:44px;padding:6px 10px;width:100%;overflow-wrap:normal}
+ .unit-options .unit-option .unit-category{grid-column:1;grid-row:1/3;align-self:center;margin:0;font-size:11px;line-height:1.3;font-weight:500}
+ .unit-options .unit-option .unit-number,.unit-options .unit-option .unit-description,.unit-options .unit-option .unit-area-primary,.unit-options .unit-option .unit-area-secondary,.unit-options .unit-option .unit-selection-rate{display:none}
+ .unit-options .unit-option .unit-selection-price{grid-column:2;grid-row:1/3;align-self:center;margin:0;font-size:16px;line-height:1.2;font-weight:650;letter-spacing:-.025em;text-align:right;white-space:nowrap}
+ .unit-options .unit-option .unit-selection-price [data-currency]{font-size:9px;font-weight:500;letter-spacing:0}
+ .unit-options .unit-request-view{display:flex;min-height:44px;padding:8px 10px;font-size:11px;justify-content:flex-start;text-align:left}
+ .unit-summary-header{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px 8px;align-items:center}
+ .unit-summary-header h3{grid-column:1;grid-row:1;font-size:clamp(17px,4.7vw,20px);margin:0;line-height:1.25}
+ .unit-summary-header .unit-price-currency{grid-column:2;grid-row:1;display:inline-flex;margin:0;padding:0;border:0;background:transparent;gap:2px}
+ .unit-price-currency button{position:relative;isolation:isolate;min-width:44px;width:44px;min-height:44px;height:44px;padding:0;background:transparent;font-size:10px}
+ .unit-price-currency button::before{content:"";position:absolute;inset:8px 0;z-index:-1;background:var(--white);border:1px solid var(--line)}
+ .unit-price-currency button[aria-pressed="true"]{background:transparent;color:var(--white)}
+ .unit-price-currency button[aria-pressed="true"]::before{background:var(--ink);border-color:var(--ink)}
+ .unit-price-currency button:hover{box-shadow:none}
+ .unit-price-currency button:focus-visible{outline:2px solid var(--sand);outline-offset:1px}
+ .unit-summary-header .price{grid-column:1/-1;grid-row:2;min-width:0;max-width:100%;width:100%;margin:0;text-align:left;display:grid;grid-template-columns:minmax(0,1fr) 100px;column-gap:8px;row-gap:2px;align-items:center}
+ .unit-summary-header .price>.label{grid-column:1;grid-row:1;margin:0;font-size:8px}
+ .unit-summary-header .price>.amount{grid-column:1;grid-row:2;margin:0;font-size:clamp(20px,6vw,27px);line-height:1.2;white-space:nowrap}
+ .unit-summary-header .price>.unit-price-rate{grid-column:1;grid-row:3;display:block;font-size:10px;line-height:1.4;color:var(--muted);margin:0}
+ .unit-summary-header .price>.unit-price-contact{grid-column:2;grid-row:2/4;margin:0;align-self:center;min-width:0}
+ .unit-summary-header .price .unit-discount-button{max-width:100%;padding:6px 7px;font-size:10px;line-height:1.3}
+ .summary>.facts{margin-top:11px;padding:11px 0}
+}
+@media(max-width:359px){
+ .unit-options .unit-option .unit-selection-price{font-size:14px}
+ .unit-summary-header .price{grid-template-columns:minmax(0,1fr) 88px;column-gap:6px}
+ .unit-summary-header .price>.unit-price-rate{font-size:9px}
+}
 </style></head><body>
 <p id="template-status" class="page" role="status">Шаблон не заполнен. Данные нового предложения добавляет помощник по рабочему промпту.</p>
 <noscript><p class="page">Для просмотра предложения включите JavaScript. / Enable JavaScript to view the offer.</p></noscript>
@@ -1779,7 +1812,25 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   };
   let language = 'ru', currency = data.currency.base, unitIndex = 0, photoIndex = 0, stageIndex = 0, scheduleOpen = false;
   const t = key => ui[language][key];
-  const local = value => typeof value === 'string' ? value : value?.[language] || '';
+  /* PRESENTATION_V16 */
+  function measureNumber(value){return new Intl.NumberFormat(language==='ru'?'ru-RU':'en-GB',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value);}
+  function measureText(text){
+    return text.replace(/(\d[\d\u00a0\u202f .,]*?)\s*(sq\.?\s*ft|sqft|м²|m²|sqm|кв\.\s*м)(?![\w²])/g,(match,raw,unit)=>{
+      let v=raw.trim().replace(/[\s\u00a0\u202f]/g,'');const comma=v.lastIndexOf(','),dot=v.lastIndexOf('.');
+      if(comma>=0&&dot>=0){if(comma>dot)v=v.replace(/\./g,'').replace(',','.');else v=v.replace(/,/g,'');}
+      else if(comma>=0){if(language==='en'&&/^\d{1,3}(,\d{3})+$/.test(v))v=v.replace(/,/g,'');else v=v.replace(',','.');}
+      const n=Number(v);return Number.isFinite(n)?measureNumber(n)+' '+unit:match;
+    });
+  }
+  function areaFact(value,unit){const text=local(value),a=unit.selection;if(!a||!/^\s*[\d\s.,]+\s*(?:sq ft|м²|m²)\s*$/.test(text))return text;const sqft=/sq ft\s*$/.test(text);return measureNumber(sqft?a.totalAreaSqft:a.totalAreaM2)+(sqft?' sq ft':language==='ru'?' м²':' m²');}
+  function chooseCurrency(code,nearPrice=false){
+    if(nearPrice&&typeof window.offerCurrencyChange==='function'){window.offerCurrencyChange(code);return;}
+    const position={top:window.scrollY,left:window.scrollX,behavior:'instant'};
+    currency=code;renderHeader();renderUnit();
+    if(nearPrice){document.querySelector('.unit-price-currency [data-currency-choice="'+code+'"]')?.focus({preventScroll:true});document.getElementById('unit-summary').getBoundingClientRect();window.scrollTo(position);}
+  }
+  function priceCurrency(){const group=labelledGroup('preference-switch unit-price-currency',t('currency'));for(const code of ['AED','USD']){const b=button('',code,()=>chooseCurrency(code,true));b.dataset.currencyChoice=code;b.setAttribute('aria-pressed',String(currency===code));group.append(b);}return group;}
+  const local = value => measureText(typeof value === 'string' ? value : value?.[language] || '');
   const isMoney = value => typeof value === 'number' && Number.isFinite(value) && value >= 0;
   // Постоянный расчётный курс проекта. Не запрашивать и не загружать онлайн.
   const AED_PER_USD = 3.66;
@@ -1797,7 +1848,7 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
   function el(tag, className, value) {const node = document.createElement(tag); if (className) node.className = className; if (value !== undefined) node.textContent = value; return node;}
   function button(className, label, action) {const node = el('button', className, label); node.type='button'; if(action) node.addEventListener('click', action); return node;}
   function money(value) {return new Intl.NumberFormat(language === 'ru' ? 'ru-RU' : 'en-GB', {minimumFractionDigits:0,maximumFractionDigits:currency === 'USD' ? 0 : 2}).format(currency === 'USD' ? value / AED_PER_USD : value);}
-  function amount(value, withCurrency = true) {const wrap = el('span','num'); const n = el('span','',money(value)); n.dataset.baseAmount=String(value); wrap.append(n); if(withCurrency) {wrap.append(' '); const code=el('span','',currency); code.dataset.currency=''; wrap.append(code);} return wrap;}
+  function amount(value, withCurrency = true, measurePrecision = null) {const wrap = el('span','num'); const n = el('span','',measurePrecision===null?money(value):measureNumber(currency==='USD'?value/AED_PER_USD:value));if(measurePrecision!==null)n.dataset.measurePrecision=String(measurePrecision); n.dataset.baseAmount=String(value); wrap.append(n); if(withCurrency) {wrap.append(' '); const code=el('span','',currency); code.dataset.currency=''; wrap.append(code);} return wrap;}
   function content(target, value) {
     if(Array.isArray(value)) {for(const token of value) {if(isMoney(token.amount)) target.append(amount(token.amount, token.currency !== false)); else target.append(local(token.text));}}
     else target.textContent=local(value);
@@ -1810,7 +1861,7 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
     if(local(data.project.location)) names.append(el('p','location',local(data.project.location)));
     const controls=el('div','header-controls');
     const currencies=labelledGroup('preference-switch',t('currency'));
-    for(const code of ['AED', 'USD']) {const b=button('',code,()=>{currency=code;renderHeader();renderUnit();});b.dataset.currencyChoice=code;b.setAttribute('aria-pressed',String(currency===code));currencies.append(b);}
+    for(const code of ['AED', 'USD']) {const b=button('',code,()=>chooseCurrency(code));b.dataset.currencyChoice=code;b.setAttribute('aria-pressed',String(currency===code));currencies.append(b);}
     controls.append(currencies);
     const languages=labelledGroup('preference-switch',t('language'));
     for(const lang of ['ru','en']) {const b=button('',lang.toUpperCase(),()=>{language=lang;render();});b.dataset.language=lang;b.setAttribute('aria-pressed',String(language===lang));b.setAttribute('aria-label',t(lang==='ru'?'russian':'english'));languages.append(b);}
@@ -1851,7 +1902,7 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
     }
     if(!copy.children.length)aside.hidden=true;aside.append(copy);return aside;
   }
-  /* SELECTION_V15 */
+  /* SELECTION_V16 */
   const selectionLabels={minimum_price:{ru:'Минимальная цена',en:'Lowest price'},value_per_m2:{ru:'Выгодный метр',en:'Value per area'},premium:{ru:'Премиум',en:'Premium'}};
   if(data.selection?.mode==='automatic_1br' && (data.units.length!==3 || new Set(data.units.map(u=>(u.building||'')+'|'+u.id)).size!==3 || data.units.some((u,i)=>u.selection?.category!==['minimum_price','value_per_m2','premium'][i] || !(u.selection?.totalAreaM2>0) || !(u.selection?.totalAreaSqft>0)))){status.hidden=false;main.hidden=true;status.textContent='Проверьте три разные подтверждённые квартиры, площади и порядок категорий.';return;}
   function unitChoices(compact) {
@@ -1861,14 +1912,14 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
       else {
         if(u.selection?.category)b.append(el('span','unit-category',local(selectionLabels[u.selection.category])));
         b.append(el('span','unit-number',u.id));
-        const fmt=v=>new Intl.NumberFormat(language==='ru'?'ru-RU':'en-GB',{maximumFractionDigits:2}).format(v),a=u.selection;
+        const fmt=v=>new Intl.NumberFormat(language==='ru'?'ru-RU':'en-GB',{minimumFractionDigits:1,maximumFractionDigits:1}).format(v),a=u.selection;
         if(a?.totalAreaSqft>0 && a?.totalAreaM2>0){b.append(el('span','unit-area-primary',fmt(a.totalAreaSqft)+' sq ft'),el('span','unit-area-secondary',fmt(a.totalAreaM2)+(language==='ru'?' м²':' m²')));}
         else if(local(u.choiceArea))b.append(el('span','unit-size',local(u.choiceArea)));
         if(local(u.choiceSubtitle))b.append(el('span','unit-description',local(u.choiceSubtitle)));
         if(a?.totalAreaSqft>0 && a?.totalAreaM2>0){const p=el('span','unit-selection-price');p.append(amount(u.price));b.append(p);
           const primary=el('span','unit-selection-rate rate-primary');
           const metric=currency==='USD',m2=language==='ru'?' / м²':' / m²';
-          primary.append(amount(u.price/(metric?a.totalAreaM2:a.totalAreaSqft)),metric?m2:' / sq ft');
+          primary.append(amount(u.price/(metric?a.totalAreaM2:a.totalAreaSqft),true,1),metric?m2:' / sq ft');
           b.append(primary);
         }
       }node.append(b);});
@@ -1880,8 +1931,8 @@ h1,.copy-heading,.section-head h2,.summary h3,.map-head h2{font-weight:500}.num,
     const choice=el('div','unit-choice'), label=el('p','unit-choice-label',t('options'));label.id='unit-choice-label';choice.append(label,unitChoices(false));head.append(choice);node.append(head);
     const live=el('p','sr-only',local(unit.title)+'. '+money(unit.price)+' '+currency);live.id='unit-status';live.setAttribute('role','status');live.setAttribute('aria-live','polite');node.append(live);
     const layout=el('div','unit-layout'), summary=el('section','summary');summary.id='unit-summary';summary.setAttribute('aria-labelledby','selected-unit-title');
-    const top=el('div','unit-summary-header'), title=el('h3','',local(unit.title));title.id='selected-unit-title';const price=el('div','price');price.append(el('p','label',t('price')));const number=el('p','amount num');number.append(amount(unit.price,false),' ',el('small','',currency));price.append(number);top.append(title,price);summary.append(top);
-    const facts=el('div','facts');for(const item of unit.facts || []) {if(!local(item.value))continue;const fact=el('div','fact');fact.append(el('small','',local(item.label)),el('strong','num',local(item.value)));if(local(item.secondary))fact.append(el('span','secondary',local(item.secondary)));facts.append(fact);}summary.append(facts);
+    const top=el('div','unit-summary-header'), title=el('h3','',local(unit.title));title.id='selected-unit-title';const price=el('div','price');price.append(el('p','label',t('price')));const number=el('p','amount num');number.append(amount(unit.price,false),' ',el('small','',currency));price.append(number);const rate=el('p','unit-price-rate'),metric=currency==='USD',area=unit.selection?.[metric?'totalAreaM2':'totalAreaSqft'];if(area>0){rate.append(amount(unit.price/area,true,1),metric?(language==='ru'?' / м²':' / m²'):' / sq ft');price.append(rate);}top.append(title,priceCurrency(),price);summary.append(top);
+    const facts=el('div','facts');for(const item of unit.facts || []) {if(!local(item.value))continue;const fact=el('div','fact');fact.append(el('small','',local(item.label)),el('strong','num',areaFact(item.value,unit)));if(local(item.secondary))fact.append(el('span','secondary',areaFact(item.secondary,unit)));facts.append(fact);}summary.append(facts);
     if(local(unit.view))summary.append(el('p','view',local(unit.view)));layout.append(summary);
     const plans=el('div','plans-grid');plans.id='plans';plans.setAttribute('aria-label',t('plans'));
     for(const kind of ['unit','floor']) {const p=unit.plans?.[kind];if(!p)continue;const figure=el('figure','plan-card'), title=el('h3','sr-only',local(p.caption));title.id=kind==='unit'?'unit-plan-title':'floor-plan-title';const open=opener('plan-canvas',p,local(p.caption));open.id=kind==='unit'?'plan-open':'floor-open';const img=el('img');img.id=kind==='unit'?'plan-preview':'floor-preview';img.src=p.src;img.alt=local(p.alt)||local(p.caption);if(p.width)img.width=p.width;if(p.height)img.height=p.height;img.loading='lazy';

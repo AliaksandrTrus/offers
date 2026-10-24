@@ -1,5 +1,5 @@
 // Isolated local presentation of verified offer renderers. No cross-project DOM or styles.
-window.mountLocalOffer=function({host,offer,language,currency,unitId,onUnit}){
+window.mountLocalOffer=function({host,offer,language,currency,unitId,onUnit,onCurrency}){
   const shell=window.OFFER_SHELLS.find(s=>s.id===offer.id),shadow=host.attachShadow({mode:'open'}),listeners=[];
   if(!shell)throw Error('Offer shell is missing');
   const data=structuredClone(offer.data);
@@ -15,7 +15,7 @@ window.mountLocalOffer=function({host,offer,language,currency,unitId,onUnit}){
   const contactStyle=document.createElement('style');contactStyle.textContent='.unit-price-contact{margin-top:4px}.unit-discount-button{position:relative;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;max-width:100%;padding:6px 10px;border:0;background:transparent;color:#FFFFFF;font:inherit;font-size:11px;line-height:1.4;white-space:normal;cursor:pointer}.unit-discount-button::before{content:"";position:absolute;inset:7px 0;z-index:-1;background:#B8442E;border:1px solid #B8442E}.unit-discount-button:focus-visible{outline:2px solid #273f35;outline-offset:3px}';shadow.append(contactStyle);
   contactButton.addEventListener('click',()=>window.OfferContact?.open(contactButton,'unit_price','discount'));
   let syncing=false;
-  const localWindow=new Proxy(window,{get(target,key){if(key==='offerAnalyticsEvent')return (action,extra)=>{if(!syncing)window.OfferAnalytics?.event(action,{project_id:offer.id,...extra});};if(key==='addEventListener')return (name,handler,options)=>{target.addEventListener(name,handler,options);listeners.push([name,handler,options]);};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;}});
+  const localWindow=new Proxy(window,{get(target,key){if(key==='offerCurrencyChange')return code=>onCurrency(code);if(key==='offerAnalyticsEvent')return (action,extra)=>{if(!syncing)window.OfferAnalytics?.event(action,{project_id:offer.id,...extra});};if(key==='addEventListener')return (name,handler,options)=>{target.addEventListener(name,handler,options);listeners.push([name,handler,options]);};const value=Reflect.get(target,key,target);return typeof value==='function'?value.bind(target):value;}});
   window.OFFER_RENDERERS[offer.id](localDocument,localWindow);
   function placeContact(){const price=shadow.querySelector('#unit-summary .price');if(price&&contact.parentElement!==price)price.append(contact);}
   placeContact();const contactObserver=new MutationObserver(placeContact);contactObserver.observe(shadow,{childList:true,subtree:true});
