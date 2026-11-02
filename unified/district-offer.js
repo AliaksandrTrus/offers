@@ -9,6 +9,8 @@
   let holder=null,slot=null,signature='';
   function sync(language,currency){
    const map=root.querySelector('#location');if(!map)return;
+   // The full district overview below replaces the former top-of-offer district copy.
+   root.querySelectorAll('.district-copy').forEach(section=>section.remove());
    const next=district.id+'|'+language+'|'+currency;
    const slotted=root!==host;
    if(signature===next&&holder?.isConnected&&(slotted?slot?.nextElementSibling===map:holder.nextElementSibling===map))return;
