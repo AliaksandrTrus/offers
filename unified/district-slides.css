@@ -11,3 +11,8 @@
 @media(max-width:760px){.d3-economy .d3-plane{width:100%}.d3-pin.d3-pin--edge-right .d3-pin-label{left:auto;right:2px;top:34px;transform:none}.d3-pin.d3-pin--route .d3-pin-label{left:auto;right:calc(100% + 2px);top:14px;transform:none}}
 
 @media(max-width:760px){.d3-pin{left:var(--pin-mobile-x,var(--x));top:var(--pin-mobile-y,var(--y))}}
+
+/* Shared overview inside an offer, immediately before its map. */
+.district-offer-mount{display:block;min-width:0;width:100%;margin:26px 0 18px}.d3-overview--embedded{margin:0;font:14px/1.5 var(--sans)}.d3-overview--embedded figure{margin:0}.d3-overview--embedded .d3-heading h2{font-size:28px;line-height:1.12;font-weight:400;letter-spacing:-.035em;margin:0}.d3-overview--embedded .eyebrow{font-size:10px;line-height:1.5;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}.d3-overview--embedded .d3-arrow{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--white);color:var(--ink);line-height:1.45;text-decoration:none}.d3-overview--embedded .d3-arrow.primary{background:var(--ink);border-color:var(--ink);color:var(--white)}
+@media(max-width:760px){.district-offer-mount{margin:22px 0 16px}.d3-overview--embedded .d3-heading h2{font-size:26px}}
+@media(max-width:340px){.d3-overview--embedded .d3-heading h2{font-size:24px}}
