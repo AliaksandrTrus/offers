@@ -189,51 +189,40 @@
  const states = new Map();
 
  function createController(district){
- const {themes,districtPoints,marketRows,mapFrames,satellite,terrainImage,origin,images,routesV04,group,nearGroups,refSources:S}=district.sceneOverview;
+ const {themes,districtPoints,marketRows,satellite,terrainImage,origin,images,routesV04,group,nearGroups,nurseryIds,schoolIds,universityIds,wideImage,refSources:S}=district.sceneOverview;
  let settings={};
  const directions = destination => 'https://www.google.com/maps/dir/?' + new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});
  const safe = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let lang = 'ru';
 let currencyCode = 'AED';
 let activeTheme = themes[0];
-let scale = 'district';
-let localView = 'terrain';
 let marketMode = 'sale';
 let nearGroup = 'errands';
 let mapObserver;
 const selections = new Map();
+const labelShifts = Array.from({length:21},(_,i)=>(i-10)*4);
+const labelOffsets = labelShifts.flatMap(dx=>labelShifts.map(dy=>[dx,dy]))
+  .sort(([ax,ay],[bx,by])=>ax*ax+ay*ay-bx*bx-by*by);
 const T = (ru,en) => lang==='ru'?ru:en;
 const label = value => typeof value==='string'?value:value?.[lang]??'';
 const fmt = (value, digits=0) => new Intl.NumberFormat(T('ru-RU','en-GB'),{minimumFractionDigits:digits,maximumFractionDigits:digits}).format(value);
 const amount = aed => fmt(currencyCode==='AED'?aed:aed/district.terrain.rate)+' '+currencyCode;
 const unitRate = rate => currencyCode==='AED'?fmt(rate,1)+' AED / sq ft':fmt(rate/(district.terrain.rate*0.09290304),1)+' USD / m²';
-const mapNote = scene => {
-  if(scene.frame==='wide')return T('Окрестности по OpenStreetMap. Объём зданий приближённый.','Surroundings based on OpenStreetMap. Building heights are approximate.');
-  if(scene.terrain)return T('Авторская 3D-визуализация. Очертания отдельных зданий обобщены.','Original 3D illustration. Individual building shapes are generalized.');
-  if(scene.frame==='city')return T('Дубай · магистрали и ориентиры.','Dubai · major roads and landmarks.');
-  return T('Карта OpenStreetMap. Высоты показаны приближённо.','OpenStreetMap-based map. Building heights are approximate.');
-};
-const chosenThemeKey = () => activeTheme.id+'-'+(activeTheme.id==='transport'?scale:activeTheme.id==='everyday'?nearGroup:'district');
+const mapNote = () => T('Авторская 3D-визуализация. Детали зданий обобщены.','Original 3D illustration. Building details are generalized.');
+const chosenThemeKey = () => activeTheme.id+'-'+(activeTheme.id==='everyday'?nearGroup:'district');
+const isEducation = () => activeTheme.id==='everyday' && nearGroup==='schools';
 
 function mapScene(){
-  if(activeTheme.id==='transport'&&scale==='city')return {frame:'city',...images.city,ids:['origin','marina','moe','atlantis','business','burj','dxb']};
-  if(['everyday','transport','economy'].includes(activeTheme.id)){
-    const ids=activeTheme.id==='everyday'?nearGroups[nearGroup]:activeTheme.id==='transport'?['junction','bus','rail','red','gold-17','gold']:['zone','in5'];
-    if(activeTheme.id==='economy'&&localView==='terrain')return {frame:'district',...images.terrain,ids,terrain:true,crop:terrainImage.crops.economy};
-    return {frame:'wide',...images[localView==='terrain'?'wide':'wideRoads'],ids,relief:localView==='terrain'};
+  const id=activeTheme.id;
+  if(id==='transport'||id==='everyday'){
+    const ids=id==='transport'?['junction','bus','red','rail','gold-17']:nearGroups[nearGroup];
+    return {frame:'wide',...wideImage,...images.widePhoto,ids};
   }
-  const ids=activeTheme.points??[];
-  if(localView==='terrain')return {frame:'district',...images.terrain,ids,terrain:true,crop:terrainImage.crops[activeTheme.id]};
-  return {frame:'district',...images.district,ids};
-}
-function project([lat,lon],frame){
-  const [west,south,east,north] = mapFrames[frame];
-  return [(lon-west)/(east-west)*100,(north-lat)/(north-south)*100];
+  return {frame:'district',...terrainImage,...images.terrain,ids:id==='economy'?['zone','in5']:[],crop:terrainImage.crops[id]};
 }
 function cropPoint([x,y],[left,top,right,bottom]){
   return [(x-left)/(right-left)*100,(y-top)/(bottom-top)*100];
 }
-const markerNo = i => String(i+1).padStart(2,'0');
 function activePlace(scene){
   return selections.get(chosenThemeKey()) ?? scene.ids[0];
 }
@@ -243,8 +232,37 @@ function link(url,text,klass='text-link'){
 function buttons(values,attr,selected){
   return values.map(([id,text])=>'<button type="button" data-'+attr+'="'+id+'" aria-pressed="'+(id===selected)+'">'+safe(text)+'</button>').join('');
 }
+const iconPaths = {
+ 'area':'<path d="M4 19V9h6v10M10 5h10v14M2 19h20M13 9h4m-4 4h4"/>',
+ 'media':'<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
+ 'road':'<path d="m8 3-4 18m12-18 4 18M12 3v4m0 3v4m0 3v4"/>',
+ 'bus':'<rect x="5" y="3" width="14" height="15" rx="3"/><path d="M5 11h14M7 18v3m10-3v3M8.5 14h.01m7 0h.01"/>',
+ 'train':'<rect x="5" y="3" width="14" height="14" rx="4"/><path d="M5 10h14m-7-7v7M9 14h.01m6 0h.01M9 17l-3 4m9-4 3 4"/>',
+ 'metro':'<path d="M4 19V5l8 8 8-8v14"/>',
+ 'mall':'<path d="M5 8h14l2 13H3zM9 9V6a3 3 0 0 1 6 0v3"/>',
+ 'clinic':'<path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5z"/>',
+ 'school':'<path d="m2 9 10-5 10 5-10 5-10-5zM6 11v6c4 3 8 3 12 0v-6m4-2v7"/>',
+ 'golf':'<path d="M7 19V4l12 4-12 4m4 6c2 .4 3 1 3 1.5S11.5 21 8 21s-6-.7-6-1.5c0-.6 1.6-1.2 3-1.4"/>',
+ 'nursery':'<rect x="3" y="12" width="8" height="8" rx="1"/><rect x="13" y="12" width="8" height="8" rx="1"/><path d="m8 10 4-6 4 6z"/>',
+ 'university':'<path d="m2 9 10-5 10 5zM3 20h18M6 9v11m6-11v11m6-11v11"/>',
+ 'football':'<rect x="2" y="5" width="20" height="14" rx="1"/><path d="M12 5v14M2 9h4v6H2m20-6h-4v6h4"/><circle cx="12" cy="12" r="2.5"/>',
+ 'fitness':'<path d="M2 12h3m14 0h3M8 12h8M5 8h3v8H5zm11 0h3v8h-3z"/>',
+ 'stadium':'<ellipse cx="12" cy="13" rx="9" ry="5"/><path d="M3 13v3c0 2.8 4 5 9 5s9-2.2 9-5v-3M12 7V2l5 2-5 2"/>'
+};
+const iconsByPlace = {
+ zone:'area',in5:'media',junction:'road',bus:'bus',rail:'train',red:'metro','gold-17':'metro',
+ 'city-centre-meaisem':'mall',clinic:'clinic','sunmarke-school':'school',arcadia:'school',victory:'school',dwight:'school',
+ 'kids-kingdom':'nursery','kinder-castle':'nursery',dibber:'nursery',middlesex:'university',wollongong:'university',
+ els:'golf',earth:'golf',fire:'golf','isd-football':'football',fitrepublik:'fitness','cricket-stadium':'stadium'
+};
+const pinIcon = id => '<span class="place-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" focusable="false">'+iconPaths[iconsByPlace[id]]+'</svg></span>';
+function transferLine(scene){
+  if(activeTheme.id!=='transport')return '';
+  const [metroX,metroY]=scene.anchors.red;
+  const [railX,railY]=scene.anchors.rail;
+  return '<svg class="transfer-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="M '+metroX+' '+metroY+' L '+railX+' '+railY+'" /></svg>';
+}
 function mapMarkup(scene){
-  const isCity = scene.frame==='city';
   const crop = scene.crop??[0,0,100,100];
   const [left,top,right,bottom]=crop;
   const cropWidth=(right-left)/100,cropHeight=(bottom-top)/100;
@@ -252,26 +270,21 @@ function mapMarkup(scene){
   const ratio=scene.width*cropWidth/(scene.height*cropHeight);
   const points = scene.ids.map(id=>{
     const place = districtPoints[id];
-    const [x,y] = scene.terrain?cropPoint(terrainImage.anchors[id],crop):project(place.point,scene.frame);
+    const [x,y] = cropPoint(scene.anchors[id],crop);
     return {id,place,x,y};
   });
-  const pins = points.map(({id,place,x,y},i)=>'<button class="pin'+(place.future?' pin--future':'')+'" type="button" data-place="'+id+'" data-x="'+x+'" data-y="'+y+'" style="--x:'+x+'%;--y:'+y+'%" aria-label="'+safe(place.name)+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'">'+markerNo(i)+'</button>').join('');
+  const pins = points.map(({id,place,x,y})=>'<button class="pin'+(place.future?' pin--future':'')+'" type="button" data-place="'+id+'" data-x="'+x+'" data-y="'+y+'" style="--x:'+x+'%;--y:'+y+'%" aria-label="'+safe(place.name)+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'">'+pinIcon(id)+'<span class="pin-name" aria-hidden="true">'+safe(place.name)+'</span></button>').join('');
   const anchors = points.map(({x,y,place})=>'<span class="map-anchor'+(place.approximate?' map-anchor--approximate':'')+'" style="left:'+x+'%;top:'+y+'%" aria-hidden="true"></span>').join('');
-  const terrainAreas = terrainImage.areas.map(([name,x,y])=>[name,...cropPoint([x,y],crop)])
+  const areas = scene.areas.map(([name,x,y])=>[name,...cropPoint([x,y],crop)])
    .filter(([,x,y])=>x>7&&x<92&&y>8&&y<92)
-   .map(([name,x,y])=>'<span class="map-area map-area--terrain" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>').join('');
-  const wideAreas = [['JVT',25.052,55.185],['Dubai Sports City',25.044,55.218],['IMPZ',25.031,55.186],['Jumeirah Golf Estates',25.0132,55.204]].map(([name,...point])=>{
-    const [x,y]=project(point,'wide');
-    return '<span class="map-area map-area--terrain" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>';
-  }).join('');
-  const area = scene.terrain?terrainAreas:isCity?'<span class="map-area map-area--city" aria-hidden="true">DUBAI</span>':scene.frame==='wide'?wideAreas:'<span class="map-area map-area--jvt" aria-hidden="true">JVT</span><span class="map-area map-area--impz" aria-hidden="true">IMPZ</span><span class="map-area map-area--sports" aria-hidden="true">Dubai Sports City</span>';
-  return '<figure class="map-figure'+(isCity?' map-figure--city':'')+'"><div class="map'+(isCity?' map--city':'')+'" data-view="'+(scene.terrain||scene.relief?'3d':isCity?'city':'osm')+'" style="--map-ratio:'+ratio+'"><img src="' +safe(new URL(scene.image,settings.assetsBase||document.baseURI).href)+'" width="'+scene.width+'" height="'+scene.height+'" style="'+imageStyle+'" alt="" />'+
-   '<div class="map-overlay"><svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>'+anchors+area+
+   .map(([name,x,y])=>'<span class="map-area map-area--terrain" data-area-x="'+x+'" data-area-y="'+y+'" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>').join('');
+  return '<figure class="map-figure"><div class="map" data-scene="'+scene.frame+'" style="--map-ratio:'+ratio+'"><img src="' +safe(new URL(scene.image,settings.assetsBase||document.baseURI).href)+'" width="'+scene.width+'" height="'+scene.height+'" style="'+imageStyle+'" alt="" />'+
+   '<div class="map-overlay">'+transferLine(scene)+'<svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>'+anchors+areas+
    '<span class="compass" aria-hidden="true">↑ N</span><div class="pins" role="group" aria-label="'+T('Объекты на карте','Map landmarks')+'">'+pins+'</div></div>'+
    '<p class="map-fallback" hidden>'+T('Подложка недоступна. Выбери объект в списке ниже.','The basemap is unavailable. Choose an item from the list below.')+'</p></div>'+
-   '<figcaption><span>'+safe(mapNote(scene))+'</span><div>'+
-   link('https://www.openstreetmap.org/copyright','© OpenStreetMap','source-link')+
-   link(satellite[scene.frame],T('Спутник Google Maps','Google Maps satellite'),'source-link')+'</div></figcaption></figure>';
+   '<figcaption><span>'+safe(mapNote())+'</span><div>'+
+   (scene.frame==='wide'?link('https://www.openstreetmap.org/copyright',T('© OpenStreetMap · геоданные','© OpenStreetMap · geodata'),'source-link'):'')+
+   link(satellite[scene.frame],T('Открыть район в Google Maps','Open area in Google Maps'),'source-link')+'</div></figcaption></figure>';
 }
 function spreadPins(map){
  const w=map.clientWidth,h=map.clientHeight;
@@ -290,14 +303,56 @@ function spreadPins(map){
    .find(([x,y])=>used.every(([u,v])=>Math.abs(x-u)>=46||Math.abs(y-v)>=46))??[px,py];
   used.push([x,y]);
   pin.style.setProperty('--x',x+'px'); pin.style.setProperty('--y',y+'px');
+  pin.classList.toggle('pin--label-left',x>w*.62);
   if(Math.hypot(x-ax,y-ay)>3)lines.push('<path d="M '+pin.dataset.x+' '+pin.dataset.y+' L '+x/w*100+' '+y/h*100+'" />');
  }
  map.querySelector('.leaders').innerHTML=lines.join('');
+ if(map.dataset.scene==='wide')positionAreaLabels(map,used);
+}
+function positionAreaLabels(map,pinCenters){
+ const {width,height,left,top}=map.getBoundingClientRect();
+ const compass=map.querySelector('.compass').getBoundingClientRect();
+ const reserved=pinCenters.map(([x,y])=>[x-17,y-17,x+17,y+17]);
+ reserved.push([compass.left-left,compass.top-top,compass.right-left,compass.bottom-top]);
+ for(const label of map.querySelectorAll('.map-area--terrain')){
+  const startX=Number(label.dataset.areaX)*width/100;
+  const startY=Number(label.dataset.areaY)*height/100;
+  const halfW=label.offsetWidth/2;
+  const halfH=label.offsetHeight/2;
+  const labelCenter=labelOffsets.map(([dx,dy])=>[
+    Math.max(halfW+3,Math.min(width-halfW-3,startX+dx)),
+    Math.max(halfH+3,Math.min(height-halfH-3,startY+dy))
+  ]).find(([x,y])=>reserved.every(([l,t,r,b])=>x+halfW<l||x-halfW>r||y+halfH<t||y-halfH>b));
+  label.style.visibility=labelCenter?'':'hidden';
+  if(!labelCenter)continue;
+  const [x,y]=labelCenter;
+  label.style.left=x+'px';
+  label.style.top=y+'px';
+  reserved.push([x-halfW,y-halfH,x+halfW,y+halfH]);
+ }
 }
 function placeList(scene){
   if(!scene.ids.length)return '';
-  const items=scene.ids.map((id,i)=>'<button type="button" data-place="'+id+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'"><span>'+markerNo(i)+'</span><strong>'+safe(districtPoints[id].name)+'</strong></button>');
-  return '<div class="places" role="group" aria-label="'+T('Выбрать место','Choose a landmark')+'">'+items.join('')+'</div><article id="detail-card" class="place-card" aria-labelledby="card-title">'+cardMarkup()+'</article>';
+  const selected=activePlace(scene);
+  const placeButtons=(ids,name)=>{
+    const items=ids.map(id=>'<button type="button" data-place="'+id+'" aria-controls="detail-card" aria-pressed="'+(selected===id)+'">'+pinIcon(id)+'<strong>'+safe(districtPoints[id].name)+'</strong></button>');
+    return '<div class="places" role="group" aria-label="'+safe(name)+'">'+items.join('')+'</div>';
+  };
+  let choices;
+  if(isEducation()){
+    const sections=[
+      [T('Детские сады','Nurseries'),nurseryIds],
+      [T('Школы','Schools'),schoolIds],
+      [T('Университеты · Dubai Knowledge Park','Universities · Dubai Knowledge Park'),universityIds,
+        T('Кампусы в Аль-Суфухе за пределами этого 3D-кадра. Маршруты доступны в карточках.','These Al Sufouh campuses are outside this 3D view. Open a card for directions.')]
+    ];
+    choices='<div class="place-sections">'+sections.map(([name,ids,note])=>
+      '<section><h3>'+safe(name)+'</h3>'+(note?'<p class="muted">'+safe(note)+'</p>':'')+placeButtons(ids,name)+'</section>'
+    ).join('')+'</div>';
+  }else{
+    choices=placeButtons(scene.ids,T('Выбрать место','Choose a landmark'));
+  }
+  return choices+'<article id="detail-card" class="place-card" aria-labelledby="card-title">'+cardMarkup()+'</article>';
 }
 function factCards(facts){
   return '<dl class="facts">'+facts.map(([value,caption])=>'<div><dt>'+safe(label(caption))+'</dt><dd>'+safe(label(value))+'</dd></div>').join('')+'</dl>';
@@ -319,7 +374,8 @@ function routeList(){
   };
   return '<section class="routes" aria-labelledby="routes-title"><h3 id="routes-title">'+T('На автомобиле от City Centre Me’aisem','Driving from City Centre Me’aisem')+'</h3><p class="muted">'+
    T('Google Maps, «Выехать сейчас», 10.11.2026 около 13:25 по Дубаю. Это время на момент проверки: оно меняется с трафиком и точкой выезда.','Google Maps, Leave now, 10 Nov 2026 at about 13:25 Dubai time. Travel times vary with traffic and your starting point.')+
-   '</p><ul>'+routesV04.map(([name,min,km,to,via,note])=>'<li><div>'+link(directions(to),name)+(via||note?'<small>'+safe([via,note?info[note]:''].filter(Boolean).join(' · '))+'</small>':'')+'</div><div class="route-measure"><strong>'+fmt(min)+' '+T('мин','min')+'</strong><small>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</small></div></li>').join('')+'</ul></section>';
+   '</p>'+link(satellite.city,T('Положение района в Дубае','Location within Dubai'))+
+   '<ul>'+routesV04.map(([name,min,km,to,via,note])=>'<li><div>'+link(directions(to),name)+(via||note?'<small>'+safe([via,note?info[note]:''].filter(Boolean).join(' · '))+'</small>':'')+'</div><div class="route-measure"><strong>'+fmt(min)+' '+T('мин','min')+'</strong><small>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</small></div></li>').join('')+'</ul></section>';
 }
 function economyPanel(){
  return '<section class="routes economy"><h3>'+T('Что работает в свободной зоне','How the free zone works')+'</h3>'+
@@ -346,20 +402,19 @@ function marketPanel(){
 }
 function themeMarkup(){
   const scene=mapScene();
-  const scaleControl=activeTheme.id==='transport'?'<div class="switch" role="group" aria-label="'+T('Масштаб карты','Map scale')+'">'+buttons([['district',T('Район','District')],['city',T('Дубай','Dubai')]],'scale',scale)+'</div>':'';
-  const viewControl=scene.frame!=='city'?'<div class="switch" role="group" aria-label="'+T('Тип подложки','Basemap type')+'">'+buttons([['terrain',T('3D-вид','3D view')],['osm',T('Карта OSM','OSM map')]],'view',localView)+'</div>':'';
   const filters=activeTheme.id==='everyday'?'<div class="filter-switch switch" role="group" aria-label="'+T('Тип места','Place type')+'">'+buttons(Object.entries(group).map(([id,title])=>[id,label(title)]),'near',nearGroup)+'</div>':'';
   const titles={
    economy:[T('Как работает свободная зона IMPZ','How the IMPZ free zone works'),T('Производственные площадки, компании и медиаинкубатор TECOM.','Production facilities, businesses and TECOM’s media incubator.')],
    transport:[T('Что уже работает и куда можно доехать','Operating connections and where they take you'),T('Автобусы, метро и Etihad Rail уже работают. Gold Line показана отдельно как план.','Buses, the Metro and Etihad Rail already operate. Gold Line is shown separately as planned.')],
-   everyday:[T('Покупки, медицина, школы и гольф','Shopping, healthcare, schools and golf'),T('Магазины и клиника внутри IMPZ. Школы и гольф — в соседних районах.','Shopping and a clinic in IMPZ. Schools and golf are in neighbouring areas.')]
+   everyday:[T('Покупки, медицина, образование и досуг','Shopping, healthcare, education and leisure'),
+    T('Садик и повседневные услуги есть в IMPZ. Школы, спорт и гольф находятся в соседних районах.','IMPZ has a nursery and everyday services. Schools, sports and golf are in neighbouring communities.')]
   };
   const [title,lead]=titles[activeTheme.id]??[label(activeTheme.title),label(activeTheme.lead)];
-  return '<div class="panel-head"><div><p class="eyebrow">'+safe(label(activeTheme.label))+'</p><h2>'+safe(title)+'</h2><p class="muted">'+safe(lead)+'</p></div>'+
-   '<div class="map-tools">'+scaleControl+viewControl+'</div></div>'+
-   filters+mapMarkup(scene)+placeList(scene)+(activeTheme.id==='economy'?economyPanel():'')+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
+  const bridgeNote=activeTheme.id==='transport'?
+    '<p class="bridge-note muted"><span aria-hidden="true"></span>'+T('Мост между R73 и Al Yalayis · 375 м','Bridge between R73 and Al Yalayis · 375 m')+'</p>':'';
+  return '<div class="panel-head"><div><h2>'+safe(title)+'</h2><p class="muted">'+safe(lead)+'</p></div></div>'+
+   filters+mapMarkup(scene)+bridgeNote+placeList(scene)+(activeTheme.id==='economy'?economyPanel():'')+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
 }
-
 
  function positionPins(root){
   const map=root?.querySelector('.map');
@@ -370,9 +425,9 @@ function themeMarkup(){
   mapObserver.observe(map);
  }
  function tabs(){
-  return themes.map((theme,i)=>{
+  return themes.map(theme=>{
    const active=theme.id===activeTheme.id;
-   return '<button type="button" id="tab-'+theme.id+'" role="tab" data-theme="'+theme.id+'" aria-controls="theme-panel" aria-selected="'+active+'" tabindex="'+(active?0:-1)+'"><span>'+markerNo(i)+'</span>'+safe(label(theme.label))+'</button>';
+   return '<button type="button" id="tab-'+theme.id+'" role="tab" data-theme="'+theme.id+'" aria-controls="theme-panel" aria-selected="'+active+'" tabindex="'+(active?0:-1)+'">'+safe(label(theme.label))+'</button>';
   }).join('');
  }
  function render(nextLang,nextCurrency,nextSettings){
@@ -407,18 +462,16 @@ function themeMarkup(){
   updatePanel(root,'#tab-'+id);
  }
  function click(root,button){
-  const {theme,scale:nextScale,view,market,place,near}=button.dataset;
+  const {theme,market,place,near}=button.dataset;
   if(theme){setTheme(root,theme);return;}
-  if(nextScale){scale=nextScale;updatePanel(root,'button[data-scale="'+scale+'"]');return;}
   if(near&&Object.hasOwn(nearGroups,near)){nearGroup=near;updatePanel(root,'button[data-near="'+nearGroup+'"]');return;}
-  if(view){localView=view;updatePanel(root,'button[data-view="'+localView+'"]');return;}
   if(market){
    marketMode=market;
    root.querySelector('.market-box').outerHTML=marketPanel();
    root.querySelector('button[data-market="'+marketMode+'"]')?.focus({preventScroll:true});
    return;
   }
-  if(place&&mapScene().ids.includes(place)){
+  if(place&&(mapScene().ids.includes(place)||(isEducation()&&universityIds.includes(place)))){
    selections.set(chosenThemeKey(),place);
    root.querySelector('#detail-card').innerHTML=cardMarkup();
    root.querySelectorAll('[data-place]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.place===place)));
