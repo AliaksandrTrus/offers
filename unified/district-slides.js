@@ -189,7 +189,7 @@
  const states = new Map();
 
  function createController(district){
- const {themes,districtPoints,marketRows,satellite,terrainImage,origin,images,routesV04,group,nearGroups,nurseryIds,schoolIds,universityIds,wideImage,refSources:S}=district.sceneOverview;
+ const {themes,districtPoints,marketRows,satellite,terrainImage,origin,images,routesV04,group,nearGroups,universityIds,wideImage,refSources:S}=district.sceneOverview;
  let settings={};
  const directions = destination => 'https://www.google.com/maps/dir/?' + new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});
  const safe = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -208,7 +208,7 @@ const label = value => typeof value==='string'?value:value?.[lang]??'';
 const fmt = (value, digits=0) => new Intl.NumberFormat(T('ru-RU','en-GB'),{minimumFractionDigits:digits,maximumFractionDigits:digits}).format(value);
 const amount = aed => fmt(currencyCode==='AED'?aed:aed/district.terrain.rate)+' '+currencyCode;
 const unitRate = rate => currencyCode==='AED'?fmt(rate,1)+' AED / sq ft':fmt(rate/(district.terrain.rate*0.09290304),1)+' USD / m²';
-const mapNote = () => T('Авторская 3D-визуализация. Детали зданий обобщены.','Original 3D illustration. Building details are generalized.');
+const mapNote = () => T('Авторская 3D-визуализация. Здания обобщены.','Original 3D illustration. Buildings are generalized.');
 const chosenThemeKey = () => activeTheme.id+'-'+(activeTheme.id==='everyday'?nearGroup:'district');
 const isEducation = () => activeTheme.id==='everyday' && nearGroup==='schools';
 
@@ -281,10 +281,12 @@ function mapMarkup(scene){
   return '<figure class="map-figure"><div class="map" data-scene="'+scene.frame+'" style="--map-ratio:'+ratio+'"><img src="' +safe(new URL(scene.image,settings.assetsBase||document.baseURI).href)+'" width="'+scene.width+'" height="'+scene.height+'" style="'+imageStyle+'" alt="" />'+
    '<div class="map-overlay">'+transferLine(scene)+'<svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>'+anchors+areas+
    '<span class="compass" aria-hidden="true">↑ N</span><div class="pins" role="group" aria-label="'+T('Объекты на карте','Map landmarks')+'">'+pins+'</div></div>'+
-   '<p class="map-fallback" hidden>'+T('Подложка недоступна. Выбери объект в списке ниже.','The basemap is unavailable. Choose an item from the list below.')+'</p></div>'+
+   '<p class="map-fallback" hidden>'+(points.length
+    ?T('Карта недоступна. Выберите объект из списка.','The map is unavailable. Choose a landmark from the list.')
+    :T('3D-визуализация недоступна.','The 3D view is unavailable.'))+'</p></div>'+
    '<figcaption><span>'+safe(mapNote())+'</span><div>'+
-   (scene.frame==='wide'?link('https://www.openstreetmap.org/copyright',T('© OpenStreetMap · геоданные','© OpenStreetMap · geodata'),'source-link'):'')+
-   link(satellite[scene.frame],T('Открыть район в Google Maps','Open area in Google Maps'),'source-link')+'</div></figcaption></figure>';
+   (scene.frame==='wide'?link('https://www.openstreetmap.org/copyright','© OpenStreetMap','source-link'):'')+
+   link(satellite[scene.frame],'Google Maps','source-link')+'</div></figcaption></figure>';
 }
 function spreadPins(map){
  const w=map.clientWidth,h=map.clientHeight;
@@ -331,28 +333,11 @@ function positionAreaLabels(map,pinCenters){
   reserved.push([x-halfW,y-halfH,x+halfW,y+halfH]);
  }
 }
-function placeList(scene){
-  if(!scene.ids.length)return '';
-  const selected=activePlace(scene);
-  const placeButtons=(ids,name)=>{
-    const items=ids.map(id=>'<button type="button" data-place="'+id+'" aria-controls="detail-card" aria-pressed="'+(selected===id)+'">'+pinIcon(id)+'<strong>'+safe(districtPoints[id].name)+'</strong></button>');
-    return '<div class="places" role="group" aria-label="'+safe(name)+'">'+items.join('')+'</div>';
-  };
-  let choices;
-  if(isEducation()){
-    const sections=[
-      [T('Детские сады','Nurseries'),nurseryIds],
-      [T('Школы','Schools'),schoolIds],
-      [T('Университеты · Dubai Knowledge Park','Universities · Dubai Knowledge Park'),universityIds,
-        T('Кампусы в Аль-Суфухе за пределами этого 3D-кадра. Маршруты доступны в карточках.','These Al Sufouh campuses are outside this 3D view. Open a card for directions.')]
-    ];
-    choices='<div class="place-sections">'+sections.map(([name,ids,note])=>
-      '<section><h3>'+safe(name)+'</h3>'+(note?'<p class="muted">'+safe(note)+'</p>':'')+placeButtons(ids,name)+'</section>'
-    ).join('')+'</div>';
-  }else{
-    choices=placeButtons(scene.ids,T('Выбрать место','Choose a landmark'));
-  }
-  return choices+'<article id="detail-card" class="place-card" aria-labelledby="card-title">'+cardMarkup()+'</article>';
+function placeIndex(ids,title,selected,kind,note=''){
+  const items=ids.map(id=>'<button type="button" data-place="'+id+'" aria-controls="detail-card" aria-pressed="'+(selected===id)+'">'+pinIcon(id)+'<strong>'+safe(districtPoints[id].name)+'</strong></button>');
+  return '<details class="place-index '+kind+'"><summary>'+safe(title)+'</summary>'+
+   (note?'<p class="muted">'+safe(note)+'</p>':'')+
+   '<div class="places" role="group" aria-label="'+safe(title)+'">'+items.join('')+'</div></details>';
 }
 function factCards(facts){
   return '<dl class="facts">'+facts.map(([value,caption])=>'<div><dt>'+safe(label(caption))+'</dt><dd>'+safe(label(value))+'</dd></div>').join('')+'</dl>';
@@ -361,8 +346,8 @@ function cardMarkup(){
   const place=districtPoints[activePlace(mapScene())];
   const detailLabels={life:T('Для жителя','For residents'),demand:T('Для инвестора','For investors'),access:T('Доступность','Getting there'),limit:T('Важно','Keep in mind')};
   const details=place.details?.map(([key,text])=>'<div><dt>'+detailLabels[key]+'</dt><dd>'+safe(label(text))+'</dd></div>').join('')??'';
-  return '<div class="card-meta"><p class="eyebrow">'+safe(label(place.category))+'</p>'+
-   (place.status?'<span class="chip">'+safe(label(place.status))+'</span>':'')+'</div><h3 id="card-title">'+safe(place.name)+'</h3><p class="card-summary">'+safe(label(place.description))+'</p>'+
+  return '<div class="card-lead"><div class="card-meta"><p class="eyebrow">'+safe(label(place.category))+'</p>'+
+   (place.status?'<span class="chip">'+safe(label(place.status))+'</span>':'')+'</div><h3 id="card-title">'+safe(place.name)+'</h3><p class="card-summary">'+safe(label(place.description))+'</p></div>'+
    factCards(place.facts)+(details?'<details><summary>'+T('Что учесть покупателю','What buyers should know')+'</summary><dl class="detail-grid">'+details+'</dl></details>':'')+
    '<div class="card-links">'+link(place.link,label(place.linkLabel) || T('Открыть на Google Maps','Open in Google Maps'))+'</div>'+
    (place.sources?.length?'<div class="source-row"><strong>'+T('Источники','Sources')+'</strong>'+place.sources.map(([title,url])=>link(url,title,'source-link')).join('')+'</div>':'');
@@ -372,10 +357,20 @@ function routeList(){
    toll:T('Платный участок','Toll section'),
    airport:T('Точка аэропорта; конкретная дверь высадки не подтверждена.','Airport pin; the exact drop-off door is unconfirmed.')
   };
-  return '<section class="routes" aria-labelledby="routes-title"><h3 id="routes-title">'+T('На автомобиле от City Centre Me’aisem','Driving from City Centre Me’aisem')+'</h3><p class="muted">'+
+  const rows=routesV04.map(([name,min,km,to,via,note])=>{
+   const qualifier=[via,info[note]].filter(Boolean).join(' · ');
+   return '<tr><th scope="row">'+link(directions(to),name,'route-link')+
+    (qualifier?'<small>'+safe(qualifier)+'</small>':'')+'</th>'+
+    '<td><strong>'+fmt(min)+' '+T('мин','min')+'</strong></td>'+
+    '<td>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</td></tr>';
+  });
+  return '<details class="driving-routes"><summary><span><strong id="routes-title">'+T('На автомобиле от City Centre Me’aisem','Driving from City Centre Me’aisem')+
+   '</strong><small>'+fmt(routesV04.length)+' '+T('маршрутов · время и расстояние','routes · time and distance')+'</small></span></summary>'+
+   '<table aria-labelledby="routes-title"><thead><tr><th scope="col">'+T('Направление','Destination')+'</th><th scope="col">'+T('Время','Time')+
+   '</th><th scope="col">'+T('Расстояние','Distance')+'</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>'+
+   '<p class="muted">'+
    T('Google Maps, «Выехать сейчас», 10.11.2026 около 13:25 по Дубаю. Это время на момент проверки: оно меняется с трафиком и точкой выезда.','Google Maps, Leave now, 10 Nov 2026 at about 13:25 Dubai time. Travel times vary with traffic and your starting point.')+
-   '</p>'+link(satellite.city,T('Положение района в Дубае','Location within Dubai'))+
-   '<ul>'+routesV04.map(([name,min,km,to,via,note])=>'<li><div>'+link(directions(to),name)+(via||note?'<small>'+safe([via,note?info[note]:''].filter(Boolean).join(' · '))+'</small>':'')+'</div><div class="route-measure"><strong>'+fmt(min)+' '+T('мин','min')+'</strong><small>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</small></div></li>').join('')+'</ul></section>';
+   '</p>'+link(satellite.city,T('Положение района в Дубае','Location within Dubai'))+'</details>';
 }
 function economyPanel(){
  return '<section class="routes economy"><h3>'+T('Что работает в свободной зоне','How the free zone works')+'</h3>'+
@@ -412,8 +407,18 @@ function themeMarkup(){
   const [title,lead]=titles[activeTheme.id]??[label(activeTheme.title),label(activeTheme.lead)];
   const bridgeNote=activeTheme.id==='transport'?
     '<p class="bridge-note muted"><span aria-hidden="true"></span>'+T('Мост между R73 и Al Yalayis · 375 м','Bridge between R73 and Al Yalayis · 375 m')+'</p>':'';
+  let mapDetails='';
+  if(scene.ids.length){
+   const selected=activePlace(scene);
+   mapDetails='<article id="detail-card" class="place-card" aria-labelledby="card-title">'+cardMarkup()+'</article>'+bridgeNote;
+   if(isEducation()){
+    mapDetails+=placeIndex(universityIds,T('Университеты рядом','Nearby universities'),selected,'campus-index',
+     T('Кампусы Dubai Knowledge Park за пределами 3D-кадра. Маршруты доступны в карточках.','The Dubai Knowledge Park campuses are outside this 3D view. Open a card for directions.'));
+   }
+   mapDetails+=placeIndex(scene.ids,T('Список точек карты','List of map landmarks'),selected,'map-place-index');
+  }
   return '<div class="panel-head"><div><h2>'+safe(title)+'</h2><p class="muted">'+safe(lead)+'</p></div></div>'+
-   filters+mapMarkup(scene)+bridgeNote+placeList(scene)+(activeTheme.id==='economy'?economyPanel():'')+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
+   filters+mapMarkup(scene)+mapDetails+(activeTheme.id==='economy'?economyPanel():'')+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
 }
 
  function positionPins(root){
@@ -461,7 +466,7 @@ function themeMarkup(){
   root.querySelector('#themes').innerHTML=tabs();
   updatePanel(root,'#tab-'+id);
  }
- function click(root,button){
+ function click(root,button,pointerSelection){
   const {theme,market,place,near}=button.dataset;
   if(theme){setTheme(root,theme);return;}
   if(near&&Object.hasOwn(nearGroups,near)){nearGroup=near;updatePanel(root,'button[data-near="'+nearGroup+'"]');return;}
@@ -473,9 +478,13 @@ function themeMarkup(){
   }
   if(place&&(mapScene().ids.includes(place)||(isEducation()&&universityIds.includes(place)))){
    selections.set(chosenThemeKey(),place);
-   root.querySelector('#detail-card').innerHTML=cardMarkup();
+   const card=root.querySelector('#detail-card');
+   card.innerHTML=cardMarkup();
    root.querySelectorAll('[data-place]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.place===place)));
    root.querySelector('.scene-announcement').textContent=T('Карточка открыта','Card opened')+' · '+districtPoints[place].name;
+   if(pointerSelection&&(matchMedia('(max-width:660px)').matches||button.closest('.place-index'))){
+    card.querySelector('.card-lead').scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+   }
    return;
   }
   if(button.hasAttribute('data-scenes-projects')){
@@ -498,7 +507,7 @@ function themeMarkup(){
  document.addEventListener('click',event=>{
   const button=event.target.closest('button');
   const root=button?.closest('[data-scenes-for]');
-  if(root)states.get(root.dataset.scenesFor)?.click(root,button);
+  if(root)states.get(root.dataset.scenesFor)?.click(root,button,event.detail>0);
  });
  document.addEventListener('keydown',event=>{
   const root=event.target.closest('[data-scenes-for]');
@@ -510,6 +519,11 @@ function themeMarkup(){
   if(!map)return;
   map.classList.add('is-missing');
   map.querySelector('.map-fallback').hidden=false;
+  const placeIndex=map.closest('.panel').querySelector('.map-place-index');
+  if(placeIndex){
+   map.closest('figure').after(placeIndex);
+   placeIndex.open=true;
+  }
  },true);
  window.DistrictScenes={
   overview(district,lang,currency,settings){
