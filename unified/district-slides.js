@@ -189,7 +189,7 @@
  const states = new Map();
 
  function createController(district){
- const {themes,districtPoints,routeRows,marketRows,mapFrames,satellite,terrainImage,origin,images}=district.sceneOverview;
+ const {themes,districtPoints,marketRows,mapFrames,satellite,terrainImage,origin,images,routesV04,group,nearGroups,refSources:S}=district.sceneOverview;
  let settings={};
  const directions = destination => 'https://www.google.com/maps/dir/?' + new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});
  const safe = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -199,6 +199,8 @@ let activeTheme = themes[0];
 let scale = 'district';
 let localView = 'terrain';
 let marketMode = 'sale';
+let nearGroup = 'errands';
+let mapObserver;
 const selections = new Map();
 const T = (ru,en) => lang==='ru'?ru:en;
 const label = value => typeof value==='string'?value:value?.[lang]??'';
@@ -206,17 +208,23 @@ const fmt = (value, digits=0) => new Intl.NumberFormat(T('ru-RU','en-GB'),{minim
 const amount = aed => fmt(currencyCode==='AED'?aed:aed/district.terrain.rate)+' '+currencyCode;
 const unitRate = rate => currencyCode==='AED'?fmt(rate,1)+' AED / sq ft':fmt(rate/(district.terrain.rate*0.09290304),1)+' USD / m²';
 const mapNote = scene => {
+  if(scene.frame==='wide')return T('Окрестности по OpenStreetMap. Объём зданий приближённый.','Surroundings based on OpenStreetMap. Building heights are approximate.');
   if(scene.terrain)return T('Авторская 3D-визуализация. Очертания отдельных зданий обобщены.','Original 3D illustration. Individual building shapes are generalized.');
   if(scene.frame==='city')return T('Дубай · магистрали и ориентиры.','Dubai · major roads and landmarks.');
   return T('Карта OpenStreetMap. Высоты показаны приближённо.','OpenStreetMap-based map. Building heights are approximate.');
 };
-const chosenThemeKey = () => activeTheme.id+'-'+(activeTheme.id==='transport'?scale:'district');
+const chosenThemeKey = () => activeTheme.id+'-'+(activeTheme.id==='transport'?scale:activeTheme.id==='everyday'?nearGroup:'district');
 
 function mapScene(){
- if(activeTheme.id==='transport'&&scale==='city')return {frame:'city',...images.city,ids:['origin','burj','atlantis']};
- const ids=activeTheme.points??[];
- if(localView==='terrain')return {frame:'district',...images.terrain,ids,terrain:true,crop:terrainImage.crops[activeTheme.id]};
- return {frame:'district',...images[activeTheme.id==='transport'?'roads':'district'],ids};
+  if(activeTheme.id==='transport'&&scale==='city')return {frame:'city',...images.city,ids:['origin','marina','moe','atlantis','business','burj','dxb']};
+  if(['everyday','transport','economy'].includes(activeTheme.id)){
+    const ids=activeTheme.id==='everyday'?nearGroups[nearGroup]:activeTheme.id==='transport'?['junction','bus','rail','red','gold-17','gold']:['zone','in5'];
+    if(activeTheme.id==='economy'&&localView==='terrain')return {frame:'district',...images.terrain,ids,terrain:true,crop:terrainImage.crops.economy};
+    return {frame:'wide',...images[localView==='terrain'?'wide':'wideRoads'],ids,relief:localView==='terrain'};
+  }
+  const ids=activeTheme.points??[];
+  if(localView==='terrain')return {frame:'district',...images.terrain,ids,terrain:true,crop:terrainImage.crops[activeTheme.id]};
+  return {frame:'district',...images.district,ids};
 }
 function project([lat,lon],frame){
   const [west,south,east,north] = mapFrames[frame];
@@ -245,25 +253,46 @@ function mapMarkup(scene){
   const points = scene.ids.map(id=>{
     const place = districtPoints[id];
     const [x,y] = scene.terrain?cropPoint(terrainImage.anchors[id],crop):project(place.point,scene.frame);
-    const [ox,oy] = place.offset??[0,0];
-    const spread=activeTheme.id==='transport'&&!isCity?1.5:1;
-    return {id,place,x,y,px:x+ox*spread,py:y+oy*spread};
+    return {id,place,x,y};
   });
-  const pins = points.map(({id,place,px,py},i)=>'<button class="pin" type="button" data-place="'+id+'" style="--x:'+px+'%;--y:'+py+'%" aria-label="'+safe(place.name)+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'">'+markerNo(i)+'</button>').join('');
-  const displaced = points.filter(p=>p.x!==p.px||p.y!==p.py);
-  const lines = displaced.map(p=>'<path d="M '+p.x+' '+p.y+' L '+p.px+' '+p.py+'" />').join('');
-  const anchors = displaced.map(p=>'<span class="map-anchor" style="left:'+p.x+'%;top:'+p.y+'%" aria-hidden="true"></span>').join('');
+  const pins = points.map(({id,place,x,y},i)=>'<button class="pin'+(place.future?' pin--future':'')+'" type="button" data-place="'+id+'" data-x="'+x+'" data-y="'+y+'" style="--x:'+x+'%;--y:'+y+'%" aria-label="'+safe(place.name)+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'">'+markerNo(i)+'</button>').join('');
+  const anchors = points.map(({x,y,place})=>'<span class="map-anchor'+(place.approximate?' map-anchor--approximate':'')+'" style="left:'+x+'%;top:'+y+'%" aria-hidden="true"></span>').join('');
   const terrainAreas = terrainImage.areas.map(([name,x,y])=>[name,...cropPoint([x,y],crop)])
    .filter(([,x,y])=>x>7&&x<92&&y>8&&y<92)
    .map(([name,x,y])=>'<span class="map-area map-area--terrain" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>').join('');
-  const area = scene.terrain?terrainAreas:isCity?'<span class="map-area map-area--city" aria-hidden="true">DUBAI</span>':'<span class="map-area map-area--jvt" aria-hidden="true">JVT</span><span class="map-area map-area--impz" aria-hidden="true">IMPZ</span><span class="map-area map-area--sports" aria-hidden="true">Dubai Sports City</span>';
-  return '<figure class="map-figure'+(isCity?' map-figure--city':'')+'"><div class="map'+(isCity?' map--city':'')+'" data-view="'+(scene.terrain?'3d':isCity?'city':'osm')+'" style="--map-ratio:'+ratio+'"><img src="'+safe(new URL(scene.image,settings.assetsBase||document.baseURI).href)+'" width="'+scene.width+'" height="'+scene.height+'" style="'+imageStyle+'" alt="" />'+
-   '<div class="map-overlay"><svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+lines+'</svg>'+anchors+area+
+  const wideAreas = [['JVT',25.052,55.185],['Dubai Sports City',25.044,55.218],['IMPZ',25.031,55.186],['Jumeirah Golf Estates',25.0132,55.204]].map(([name,...point])=>{
+    const [x,y]=project(point,'wide');
+    return '<span class="map-area map-area--terrain" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>';
+  }).join('');
+  const area = scene.terrain?terrainAreas:isCity?'<span class="map-area map-area--city" aria-hidden="true">DUBAI</span>':scene.frame==='wide'?wideAreas:'<span class="map-area map-area--jvt" aria-hidden="true">JVT</span><span class="map-area map-area--impz" aria-hidden="true">IMPZ</span><span class="map-area map-area--sports" aria-hidden="true">Dubai Sports City</span>';
+  return '<figure class="map-figure'+(isCity?' map-figure--city':'')+'"><div class="map'+(isCity?' map--city':'')+'" data-view="'+(scene.terrain||scene.relief?'3d':isCity?'city':'osm')+'" style="--map-ratio:'+ratio+'"><img src="' +safe(new URL(scene.image,settings.assetsBase||document.baseURI).href)+'" width="'+scene.width+'" height="'+scene.height+'" style="'+imageStyle+'" alt="" />'+
+   '<div class="map-overlay"><svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>'+anchors+area+
    '<span class="compass" aria-hidden="true">↑ N</span><div class="pins" role="group" aria-label="'+T('Объекты на карте','Map landmarks')+'">'+pins+'</div></div>'+
    '<p class="map-fallback" hidden>'+T('Подложка недоступна. Выбери объект в списке ниже.','The basemap is unavailable. Choose an item from the list below.')+'</p></div>'+
    '<figcaption><span>'+safe(mapNote(scene))+'</span><div>'+
    link('https://www.openstreetmap.org/copyright','© OpenStreetMap','source-link')+
    link(satellite[scene.frame],T('Спутник Google Maps','Google Maps satellite'),'source-link')+'</div></figcaption></figure>';
+}
+function spreadPins(map){
+ const w=map.clientWidth,h=map.clientHeight;
+ if(w<60||h<60)return;
+ const used=[],lines=[];
+ for(const pin of map.querySelectorAll('.pin')){
+  const ax=+pin.dataset.x*w/100,ay=+pin.dataset.y*h/100;
+  const clamp=(v,limit)=>Math.max(25,Math.min(limit-25,v));
+  const px=clamp(ax,w),py=clamp(ay,h);
+  let options=[[px,py]];
+  for(const radius of [48,65,88,116,150])for(let i=0;i<16;i++){
+    const a=Math.PI*i/8;
+    options.push([clamp(ax+Math.cos(a)*radius,w),clamp(ay+Math.sin(a)*radius,h)]);
+  }
+  const [x,y]=options.sort((a,b)=>Math.hypot(a[0]-ax,a[1]-ay)-Math.hypot(b[0]-ax,b[1]-ay))
+   .find(([x,y])=>used.every(([u,v])=>Math.abs(x-u)>=46||Math.abs(y-v)>=46))??[px,py];
+  used.push([x,y]);
+  pin.style.setProperty('--x',x+'px'); pin.style.setProperty('--y',y+'px');
+  if(Math.hypot(x-ax,y-ay)>3)lines.push('<path d="M '+pin.dataset.x+' '+pin.dataset.y+' L '+x/w*100+' '+y/h*100+'" />');
+ }
+ map.querySelector('.leaders').innerHTML=lines.join('');
 }
 function placeList(scene){
   if(!scene.ids.length)return '';
@@ -280,16 +309,27 @@ function cardMarkup(){
   return '<div class="card-meta"><p class="eyebrow">'+safe(label(place.category))+'</p>'+
    (place.status?'<span class="chip">'+safe(label(place.status))+'</span>':'')+'</div><h3 id="card-title">'+safe(place.name)+'</h3><p class="card-summary">'+safe(label(place.description))+'</p>'+
    factCards(place.facts)+(details?'<details><summary>'+T('Что учесть покупателю','What buyers should know')+'</summary><dl class="detail-grid">'+details+'</dl></details>':'')+
-   link(place.link,label(place.linkLabel) || T('Открыть на Google Maps','Open in Google Maps'));
+   '<div class="card-links">'+link(place.link,label(place.linkLabel) || T('Открыть на Google Maps','Open in Google Maps'))+'</div>'+
+   (place.sources?.length?'<div class="source-row"><strong>'+T('Источники','Sources')+'</strong>'+place.sources.map(([title,url])=>link(url,title,'source-link')).join('')+'</div>':'');
 }
 function routeList(){
   const info = {
    toll:T('Платный участок','Toll section'),
-   dwc:T('Точка аэропорта. Конкретная дверь высадки не подтверждена.','Airport point. The exact drop-off door is unconfirmed.')
+   airport:T('Точка аэропорта; конкретная дверь высадки не подтверждена.','Airport pin; the exact drop-off door is unconfirmed.')
   };
   return '<section class="routes" aria-labelledby="routes-title"><h3 id="routes-title">'+T('На автомобиле от City Centre Me’aisem','Driving from City Centre Me’aisem')+'</h3><p class="muted">'+
-   T('Основные маршруты Google Maps на 10.11.2026. Маршруты с платными дорогами учитывались.','Primary Google Maps routes on 10 Nov 2026. Toll routes were included.')+
-   '</p><ul>'+routeRows.map(([name,km,to,note])=>'<li><div>'+link(directions(to),name)+(note?'<small>'+safe(info[note])+'</small>':'')+'</div><strong>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</strong></li>').join('')+'</ul></section>';
+   T('Google Maps, «Выехать сейчас», 10.11.2026 около 13:25 по Дубаю. Это время на момент проверки: оно меняется с трафиком и точкой выезда.','Google Maps, Leave now, 10 Nov 2026 at about 13:25 Dubai time. Travel times vary with traffic and your starting point.')+
+   '</p><ul>'+routesV04.map(([name,min,km,to,via,note])=>'<li><div>'+link(directions(to),name)+(via||note?'<small>'+safe([via,note?info[note]:''].filter(Boolean).join(' · '))+'</small>':'')+'</div><div class="route-measure"><strong>'+fmt(min)+' '+T('мин','min')+'</strong><small>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</small></div></li>').join('')+'</ul></section>';
+}
+function economyPanel(){
+ return '<section class="routes economy"><h3>'+T('Что работает в свободной зоне','How the free zone works')+'</h3>'+
+ '<dl class="economy-grid">'+[
+  [T('Какие компании здесь работают','Who operates here'),T('Xerox — технологии печати и документооборота; Reproflex3 — подготовка к флексопечати для упаковки; Dynagraph — решения для полиграфии; NDigitec — допечатная подготовка, цифровая печать и производство контента.','Xerox provides printing and document technology; Reproflex3 works in flexographic prepress for packaging; Dynagraph supplies print solutions; NDigitec works in prepress, digital printing and creative production.')],
+  [T('Чем зона привлекает бизнес','Why businesses choose it'),T('В одном месте можно зарегистрировать компанию, снять склад или площадку под производство и найти подрядчиков по печати, упаковке и хранению. Для небольших медиакоманд in5 даёт доступ к студиям и оборудованию без необходимости строить собственные.','Businesses can register, lease a warehouse or production site, and find printing, packaging and storage suppliers in one district. in5 gives smaller media teams access to studios and equipment without setting up their own.')],
+  [T('Что известно об обороте','What is known about revenue'),T('Отдельный совокупный оборот компаний IMPZ в открытых источниках не найден. TECOM указал 421 млн AED выручки медиасегмента за 2025 год: это выручка оператора по трём медиарайонам, включая Media City и Studio City.','A combined turnover figure for IMPZ businesses was not found in public sources. TECOM reported AED 421 million of media segment revenue for 2025: the operator’s revenue across three media districts, including Media City and Studio City.')],
+  [T('Что это значит для района','What this means for the district'),T('Рабочие места связаны с печатью, производством, складами и медиаконтентом. Сотрудники и подрядчики — возможная аудитория для местной аренды. Данных о том, сколько из них живут в IMPZ, нет.','Employment is linked to print, production, warehousing and content creation. Staff and contractors are potential local renters. The share living in IMPZ is unknown.')]
+ ].map(([h,p])=>'<div><dt>'+safe(h)+'</dt><dd>'+safe(p)+'</dd></div>').join('')+'</dl>'+
+ '<div class="source-row">'+link(S.growth,'Dubai Media Office','source-link')+link(S.annual,'TECOM · Annual Report 2025','source-link')+'</div></section>';
 }
 function marketPanel(){
   const sale=marketMode==='sale';
@@ -307,12 +347,28 @@ function marketPanel(){
 function themeMarkup(){
   const scene=mapScene();
   const scaleControl=activeTheme.id==='transport'?'<div class="switch" role="group" aria-label="'+T('Масштаб карты','Map scale')+'">'+buttons([['district',T('Район','District')],['city',T('Дубай','Dubai')]],'scale',scale)+'</div>':'';
-  const viewControl=scene.frame==='district'?'<div class="switch" role="group" aria-label="'+T('Тип подложки','Basemap type')+'">'+buttons([['terrain',T('3D-вид','3D view')],['osm',T('Карта OSM','OSM map')]],'view',localView)+'</div>':'';
-  return '<div class="panel-head"><div><p class="eyebrow">'+safe(label(activeTheme.label))+'</p><h2>'+safe(label(activeTheme.title))+'</h2><p class="muted">'+safe(label(activeTheme.lead))+'</p></div>'+
+  const viewControl=scene.frame!=='city'?'<div class="switch" role="group" aria-label="'+T('Тип подложки','Basemap type')+'">'+buttons([['terrain',T('3D-вид','3D view')],['osm',T('Карта OSM','OSM map')]],'view',localView)+'</div>':'';
+  const filters=activeTheme.id==='everyday'?'<div class="filter-switch switch" role="group" aria-label="'+T('Тип места','Place type')+'">'+buttons(Object.entries(group).map(([id,title])=>[id,label(title)]),'near',nearGroup)+'</div>':'';
+  const titles={
+   economy:[T('Как работает свободная зона IMPZ','How the IMPZ free zone works'),T('Производственные площадки, компании и медиаинкубатор TECOM.','Production facilities, businesses and TECOM’s media incubator.')],
+   transport:[T('Что уже работает и куда можно доехать','Operating connections and where they take you'),T('Автобусы, метро и Etihad Rail уже работают. Gold Line показана отдельно как план.','Buses, the Metro and Etihad Rail already operate. Gold Line is shown separately as planned.')],
+   everyday:[T('Покупки, медицина, школы и гольф','Shopping, healthcare, schools and golf'),T('Магазины и клиника внутри IMPZ. Школы и гольф — в соседних районах.','Shopping and a clinic in IMPZ. Schools and golf are in neighbouring areas.')]
+  };
+  const [title,lead]=titles[activeTheme.id]??[label(activeTheme.title),label(activeTheme.lead)];
+  return '<div class="panel-head"><div><p class="eyebrow">'+safe(label(activeTheme.label))+'</p><h2>'+safe(title)+'</h2><p class="muted">'+safe(lead)+'</p></div>'+
    '<div class="map-tools">'+scaleControl+viewControl+'</div></div>'+
-   mapMarkup(scene)+placeList(scene)+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
+   filters+mapMarkup(scene)+placeList(scene)+(activeTheme.id==='economy'?economyPanel():'')+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
 }
 
+
+ function positionPins(root){
+  const map=root?.querySelector('.map');
+  if(!map?.isConnected)return;
+  mapObserver?.disconnect();
+  spreadPins(map);
+  mapObserver=new ResizeObserver(()=>spreadPins(map));
+  mapObserver.observe(map);
+ }
  function tabs(){
   return themes.map((theme,i)=>{
    const active=theme.id===activeTheme.id;
@@ -323,6 +379,7 @@ function themeMarkup(){
   lang=nextLang;
   currencyCode=nextCurrency;
   settings=nextSettings;
+  queueMicrotask(()=>positionPins(document.querySelector('[data-scenes-for="'+district.id+'"]')));
   const heading=settings.embedded?'h2':'h1';
   const districtUrl=new URL('./#district='+district.id,settings.assetsBase||document.baseURI);
   const overviewLink=settings.embedded?'<a class="text-link" href="'+safe(districtUrl.href)+'">'+T('Открыть обзор района','Open district overview')+'</a>':'';
@@ -339,6 +396,7 @@ function themeMarkup(){
   const panel=root.querySelector('#theme-panel');
   panel.setAttribute('aria-labelledby','tab-'+activeTheme.id);
   panel.innerHTML=themeMarkup();
+  positionPins(root);
   if(focus)root.querySelector(focus)?.focus({preventScroll:true});
  }
  function setTheme(root,id){
@@ -349,9 +407,10 @@ function themeMarkup(){
   updatePanel(root,'#tab-'+id);
  }
  function click(root,button){
-  const {theme,scale:nextScale,view,market,place}=button.dataset;
+  const {theme,scale:nextScale,view,market,place,near}=button.dataset;
   if(theme){setTheme(root,theme);return;}
   if(nextScale){scale=nextScale;updatePanel(root,'button[data-scale="'+scale+'"]');return;}
+  if(near&&Object.hasOwn(nearGroups,near)){nearGroup=near;updatePanel(root,'button[data-near="'+nearGroup+'"]');return;}
   if(view){localView=view;updatePanel(root,'button[data-view="'+localView+'"]');return;}
   if(market){
    marketMode=market;
