@@ -16,3 +16,134 @@
 .district-offer-mount{display:block;min-width:0;width:100%;margin:26px 0 18px}.d3-overview--embedded{margin:0;font:14px/1.5 var(--sans)}.d3-overview--embedded figure{margin:0}.d3-overview--embedded .d3-heading h2{font-size:28px;line-height:1.12;font-weight:400;letter-spacing:-.035em;margin:0}.d3-overview--embedded .eyebrow{font-size:10px;line-height:1.5;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}.d3-overview--embedded .d3-arrow{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--white);color:var(--ink);line-height:1.45;text-decoration:none}.d3-overview--embedded .d3-arrow.primary{background:var(--ink);border-color:var(--ink);color:var(--white)}
 @media(max-width:760px){.district-offer-mount{margin:22px 0 16px}.d3-overview--embedded .d3-heading h2{font-size:26px}}
 @media(max-width:340px){.d3-overview--embedded .d3-heading h2{font-size:24px}}
+
+:root { --d3-places-layout: 1; }
+.d3-topics--places { grid-template-columns: repeat(4,minmax(0,1fr)); }
+.d3-stage.d3-stage--places {
+  height: auto;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--white);
+}
+.d3-places-heading { margin-bottom: 14px; }
+.d3-places-heading h2 { margin: 0; font-size: clamp(20px,2.4vw,27px); line-height: 1.2; }
+.d3-places-heading p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.d3-place-frame { border: 1px solid #d9dece; border-radius: 10px; overflow: hidden; }
+.d3-map-window.d3-places-map {
+  position: relative;
+  inset: auto;
+  height: auto;
+  aspect-ratio: 2.36;
+  background: #d5d7ca;
+}
+.d3-places-plane {
+  position: absolute;
+  top: 50%;
+  width: 100%;
+  aspect-ratio: var(--d3-place-ratio);
+  transform: translateY(-50%);
+}
+.d3-places-image,.d3-place-leaders { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.d3-place-leader-edge,.d3-place-leader { fill: none; vector-effect: non-scaling-stroke; }
+.d3-place-leader-edge { stroke: #20382a; stroke-width: 3; }
+.d3-place-leader { stroke: #fffefa; stroke-width: 1.4; }
+.d3-place-anchor { fill: #273c33; stroke: #fffefa; stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.d3-place-context { position: absolute; display: flex; align-items: center; gap: 4px; font-size: 11px; line-height: 1.3; font-weight: 650; white-space: nowrap; pointer-events: none; }
+.d3-place-context--district { padding: 6px 8px; color: var(--white); background: #273c33ed; }
+.d3-place-context--station { transform: translate(-11px,-50%); }
+.d3-place-context--station b { display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid var(--white); border-radius: 50%; background: var(--ink); color: var(--white); }
+.d3-place-context--station span,.d3-place-context--road { padding: 4px 6px; background: var(--white); }
+.d3-place-context--road { transform: translate(-50%,-50%); }
+.d3-visualization.d3-place-visualization { left: 12px; right: auto; }
+.d3-pin.d3-place-pin { width: 44px; height: 44px; justify-content: center; padding: 0; transform: translate(-50%,-50%); }
+.d3-place-pin .d3-pin-label { position: absolute; top: auto; left: calc(100% + 1px); transform: none; }
+.d3-place-pin--left .d3-pin-label { left: auto; right: calc(100% + 1px); }
+.d3-place-pin .d3-place-pin-short { display: none; }
+.d3-place-caption { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 2px 12px; padding: 5px 9px; background: #f6f7ef; color: var(--muted); font-size: 11px; }
+.d3-place-caption a { color: inherit; text-decoration: none; }
+.d3-place-caption a:hover { text-decoration: underline; }
+.d3-map-window.d3-places-map--missing { aspect-ratio: auto; padding: 15px; }
+.d3-places-map--missing .d3-places-plane,.d3-places-map--missing .d3-place-visualization { display: none; }
+.d3-place-unavailable { margin: 0; }
+
+.d3-place-list { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 7px; margin: 12px 0; }
+.d3-place-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  min-height: 53px;
+  padding: 7px 9px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.d3-place-option:hover { background: #f3f5ed; }
+.d3-place-option.is-selected { border-color: #607d69; background: #eef3e9; box-shadow: inset 0 0 0 1px #607d69; }
+.d3-place-option i,.d3-place-icon { display: grid; place-items: center; flex: none; width: 30px; height: 30px; border-radius: 50%; color: #315140; background: #e9eee4; font-size: 12px; font-style: normal; font-weight: 750; }
+.d3-place-option.is-selected i { color: var(--white); background: var(--ink); }
+.d3-place-option strong,.d3-place-option small { display: block; }
+.d3-place-option strong { font-size: 13px; }
+.d3-place-option small { color: var(--muted); font-size: 12px; }
+
+.d3-info.d3-info--place {
+  position: static;
+  width: auto;
+  max-height: none;
+  overflow: visible;
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: minmax(0,1.55fr) minmax(210px,1fr);
+  gap: 22px;
+  padding: 20px;
+  border: 1px solid #dce3d7;
+  border-radius: 10px;
+  background: #fbfcf7;
+}
+.d3-place-card-head { display: flex; align-items: start; gap: 11px; }
+.d3-place-icon { width: 40px; height: 40px; border-radius: 8px; }
+.d3-place-icon svg { width: 22px; height: 22px; }
+.d3-place-meta { color: var(--muted); font-size: 12px; font-weight: 650; }
+.d3-info--place h3 { margin: 1px 0 0; font-size: clamp(21px,2.5vw,29px); line-height: 1.12; letter-spacing: -.025em; }
+.d3-info--place .d3-place-description { margin: 10px 0 14px; font-size: 15px; }
+.d3-place-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; border-top: 1px solid var(--line); margin: 0; padding-top: 10px; }
+.d3-place-facts dt { color: var(--muted); font-size: 12px; }
+.d3-place-facts dd { margin: 3px 0 0; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.d3-place-route { display: flex; flex-direction: column; justify-content: center; align-items: start; padding-left: 20px; border-left: 1px solid var(--line); gap: 7px; }
+.d3-place-route p { color: var(--muted); font-size: 13px; }
+.d3-place-route .d3-place-route-title { color: var(--ink); font-weight: 700; font-size: 14px; }
+.d3-place-route-link { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; margin-top: 2px; padding: 8px 12px; border-radius: 6px; background: var(--ink); color: var(--white); text-decoration: none; font-size: 13px; font-weight: 650; }
+.d3-place-route-link:hover { background: #38584a; color: var(--white); }
+.d3-place-option:focus-visible,.d3-place-route-link:focus-visible,.d3-place-pin:focus-visible { outline: 2px solid var(--sand); outline-offset: 2px; }
+
+@media(max-width:850px) {
+  .d3-map-window.d3-places-map { aspect-ratio: 1672/941; }
+  .d3-place-context span,.d3-place-context--district { display: none; }
+  .d3-place-pin .d3-place-pin-full { display: none; }
+  .d3-place-pin .d3-place-pin-short { display: block; left: 50%; right: auto; top: 37px; transform: translateX(-50%); padding: 3px 5px; font-size: 10px; line-height: 1.2; }
+  .d3-place-pin i { width: 27px; height: 27px; font-size: 10px; }
+}
+@media(max-width:600px) {
+  .d3-topics--places { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .d3-topics--places .d3-topic { min-height: 46px; }
+  .d3-stage.d3-stage--places { padding: 9px; }
+  .d3-places-heading { margin-bottom: 9px; }
+  .d3-places-heading p { font-size: 13px; }
+  .d3-visualization.d3-place-visualization { top: 7px; left: 7px; font-size: 10px; }
+  .d3-place-context--station { font-size: 9px; transform: translate(-8px,-50%); }
+  .d3-place-context--station b { width: 16px; height: 16px; border-width: 1px; }
+  .d3-place-context--road { font-size: 10px; padding: 2px 4px; }
+  .d3-place-list { gap: 4px; margin: 8px 0; }
+  .d3-place-option { min-height: 46px; padding: 4px; gap: 4px; }
+  .d3-place-option i { width: 23px; height: 23px; font-size: 10px; }
+  .d3-place-option strong { font-size: 11px; }
+  .d3-place-option small { display: none; }
+  .d3-info.d3-info--place { grid-template-columns: minmax(0,1fr); padding: 12px; gap: 13px; }
+  .d3-info--place .d3-place-description { font-size: 14px; }
+  .d3-place-route { padding: 11px 0 0; border: 0; border-top: 1px solid var(--line); }
+}
