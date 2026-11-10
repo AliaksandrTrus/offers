@@ -189,7 +189,7 @@
  const states = new Map();
 
  function createController(district){
- const {themes,districtPoints,marketRows,satellite,terrainImage,origin,images,routesV04,group,nearGroups,universityIds,wideImage,refSources:S}=district.sceneOverview;
+ const {themes,districtPoints,marketRows,satellite,terrainImage,origin,images,routesV04,group,nearGroups,universityIds,wideImage}=district.sceneOverview;
  let settings={};
  const directions = destination => 'https://www.google.com/maps/dir/?' + new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});
  const safe = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -227,10 +227,10 @@ function activePlace(scene){
   return selections.get(chosenThemeKey()) ?? scene.ids[0];
 }
 function link(url,text,klass='text-link'){
-  return '<a class="'+klass+'" href="'+safe(url)+'" target="_blank" rel="noopener noreferrer">'+safe(text)+' <span aria-hidden="true">↗</span></a>';
+  return '<a class="'+klass+'" href="'+safe(url)+'" target="_blank" rel="noopener noreferrer">'+safe(text)+' <span aria-hidden="true">↗︎</span></a>';
 }
 function buttons(values,attr,selected){
-  return values.map(([id,text])=>'<button type="button" data-'+attr+'="'+id+'" aria-pressed="'+(id===selected)+'">'+safe(text)+'</button>').join('');
+  return values.map(([id,text])=>'<button type="button" class="d3-topic" data-'+attr+'="'+id+'" aria-pressed="'+(id===selected)+'">'+safe(text)+'</button>').join('');
 }
 const iconPaths = {
  'area':'<path d="M4 19V9h6v10M10 5h10v14M2 19h20M13 9h4m-4 4h4"/>',
@@ -273,26 +273,33 @@ function mapMarkup(scene){
     const [x,y] = cropPoint(scene.anchors[id],crop);
     return {id,place,x,y};
   });
-  const pins = points.map(({id,place,x,y})=>'<button class="pin'+(place.future?' pin--future':'')+'" type="button" data-place="'+id+'" data-x="'+x+'" data-y="'+y+'" style="--x:'+x+'%;--y:'+y+'%" aria-label="'+safe(place.name)+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'">'+pinIcon(id)+'<span class="pin-name" aria-hidden="true">'+safe(place.name)+'</span></button>').join('');
+  const pins = points.map(({id,place,x,y})=>'<button class="pin'+(place.future?' pin--future':'')+'" type="button" data-place="'+id+'" data-x="'+x+'" data-y="'+y+'" style="--x:'+x+'%;--y:'+y+'%" aria-label="'+safe(place.name)+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'">'+pinIcon(id)+'<span class="pin-name d3-pin-label" aria-hidden="true">'+safe(id==='zone'?district.name:place.name)+'</span></button>').join('');
   const anchors = points.map(({x,y,place})=>'<span class="map-anchor'+(place.approximate?' map-anchor--approximate':'')+'" style="left:'+x+'%;top:'+y+'%" aria-hidden="true"></span>').join('');
   const areas = scene.areas.map(([name,x,y])=>[name,...cropPoint([x,y],crop)])
-   .filter(([,x,y])=>x>7&&x<92&&y>8&&y<92)
-   .map(([name,x,y])=>'<span class="map-area map-area--terrain" data-area-x="'+x+'" data-area-y="'+y+'" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>').join('');
+   .filter(([name,x,y])=>x>7&&x<92&&y>8&&y<92&&(activeTheme.id!=='economy'||name!=='IMPZ'))
+   .map(([name,x,y])=>'<span class="map-area map-area--terrain '+(name==='IMPZ'?'d3-district-label':'d3-pin-label')+'" data-area-x="'+x+'" data-area-y="'+y+'" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>').join('');
   return '<figure class="map-figure"><div class="map" data-scene="'+scene.frame+'" style="--map-ratio:'+ratio+'"><img src="' +safe(new URL(scene.image,settings.assetsBase||document.baseURI).href)+'" width="'+scene.width+'" height="'+scene.height+'" style="'+imageStyle+'" alt="" />'+
    '<div class="map-overlay">'+transferLine(scene)+'<svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>'+anchors+areas+
-   '<span class="compass" aria-hidden="true">↑ N</span><div class="pins" role="group" aria-label="'+T('Объекты на карте','Map landmarks')+'">'+pins+'</div></div>'+
+   '<span class="compass" aria-hidden="true">↑ N</span><span class="d3-visualization" title="'+safe(mapNote())+'">'+T('3D-визуализация','3D visualization')+'</span>'+
+   '<div class="pins" role="group" aria-label="'+T('Объекты на карте','Map landmarks')+'">'+pins+'</div></div>'+
    '<p class="map-fallback" hidden>'+(points.length
     ?T('Карта недоступна. Выберите объект из списка.','The map is unavailable. Choose a landmark from the list.')
     :T('3D-визуализация недоступна.','The 3D view is unavailable.'))+'</p></div>'+
-   '<figcaption><span>'+safe(mapNote())+'</span><div>'+
-   (scene.frame==='wide'?link('https://www.openstreetmap.org/copyright','© OpenStreetMap','source-link'):'')+
-   link(satellite[scene.frame],'Google Maps','source-link')+'</div></figcaption></figure>';
+   '<figcaption class="d3-place-caption"><span>'+T('Здания обобщены','Buildings generalized')+'</span><div>'+
+   (scene.frame==='wide'?link('https://www.openstreetmap.org/copyright','© OpenStreetMap','map-credit'):'')+
+   link(satellite[scene.frame],T('Открыть карту','Open map'),'map-link')+'</div></figcaption></figure>';
 }
 function spreadPins(map){
  const w=map.clientWidth,h=map.clientHeight;
- if(w<60||h<60)return;
+ if(w<60||h<60||map.classList.contains('is-missing'))return;
+ const {left,top}=map.getBoundingClientRect();
+ const badges=[...map.querySelectorAll('.compass,.d3-visualization')].map(el=>{
+  const box=el.getBoundingClientRect();
+  return [box.left-left,box.top-top,box.right-left,box.bottom-top];
+ });
  const used=[],lines=[];
- for(const pin of map.querySelectorAll('.pin')){
+ const pins=[...map.querySelectorAll('.pin')];
+ for(const pin of pins){
   const ax=+pin.dataset.x*w/100,ay=+pin.dataset.y*h/100;
   const clamp=(v,limit)=>Math.max(25,Math.min(limit-25,v));
   const px=clamp(ax,w),py=clamp(ay,h);
@@ -302,35 +309,46 @@ function spreadPins(map){
     options.push([clamp(ax+Math.cos(a)*radius,w),clamp(ay+Math.sin(a)*radius,h)]);
   }
   const [x,y]=options.sort((a,b)=>Math.hypot(a[0]-ax,a[1]-ay)-Math.hypot(b[0]-ax,b[1]-ay))
-   .find(([x,y])=>used.every(([u,v])=>Math.abs(x-u)>=46||Math.abs(y-v)>=46))??[px,py];
+   .find(([x,y])=>used.every(([u,v])=>Math.abs(x-u)>=46||Math.abs(y-v)>=46)&&
+    badges.every(([l,t,r,b])=>x+17<l||x-17>r||y+17<t||y-17>b))??[px,py];
   used.push([x,y]);
   pin.style.setProperty('--x',x+'px'); pin.style.setProperty('--y',y+'px');
-  pin.classList.toggle('pin--label-left',x>w*.62);
   if(Math.hypot(x-ax,y-ay)>3)lines.push('<path d="M '+pin.dataset.x+' '+pin.dataset.y+' L '+x/w*100+' '+y/h*100+'" />');
  }
  map.querySelector('.leaders').innerHTML=lines.join('');
- if(map.dataset.scene==='wide')positionAreaLabels(map,used);
+ positionLabels(map,pins,used,badges,w,h);
 }
-function positionAreaLabels(map,pinCenters){
- const {width,height,left,top}=map.getBoundingClientRect();
- const compass=map.querySelector('.compass').getBoundingClientRect();
- const reserved=pinCenters.map(([x,y])=>[x-17,y-17,x+17,y+17]);
- reserved.push([compass.left-left,compass.top-top,compass.right-left,compass.bottom-top]);
- for(const label of map.querySelectorAll('.map-area--terrain')){
-  const startX=Number(label.dataset.areaX)*width/100;
-  const startY=Number(label.dataset.areaY)*height/100;
+function positionLabels(map,pins,centers,badges,width,height){
+ const reserved=[...badges,...centers.map(([x,y])=>[x-17,y-17,x+17,y+17])];
+ function placeLabel(label,candidates){
   const halfW=label.offsetWidth/2;
   const halfH=label.offsetHeight/2;
-  const labelCenter=labelOffsets.map(([dx,dy])=>[
-    Math.max(halfW+3,Math.min(width-halfW-3,startX+dx)),
-    Math.max(halfH+3,Math.min(height-halfH-3,startY+dy))
+  const point=candidates(halfW,halfH).map(([x,y])=>[
+    Math.max(halfW+3,Math.min(width-halfW-3,x)),
+    Math.max(halfH+3,Math.min(height-halfH-3,y))
   ]).find(([x,y])=>reserved.every(([l,t,r,b])=>x+halfW<l||x-halfW>r||y+halfH<t||y-halfH>b));
-  label.style.visibility=labelCenter?'':'hidden';
-  if(!labelCenter)continue;
-  const [x,y]=labelCenter;
-  label.style.left=x+'px';
-  label.style.top=y+'px';
-  reserved.push([x-halfW,y-halfH,x+halfW,y+halfH]);
+  label.style.visibility=point?'':'hidden';
+  if(point)reserved.push([point[0]-halfW,point[1]-halfH,point[0]+halfW,point[1]+halfH]);
+  return point;
+ }
+ pins.forEach((pin,index)=>{
+  const label=pin.querySelector('.pin-name');
+  if(!label.offsetWidth)return;
+  const [x,y]=centers[index];
+  const point=placeLabel(label,(w,h)=>[[x,y+21+h],[x,y-21-h],[x+21+w,y],[x-21-w,y]]);
+  if(point){
+   label.style.left=(point[0]-x+pin.clientWidth/2)+'px';
+   label.style.top=(point[1]-y+pin.clientHeight/2)+'px';
+  }
+ });
+ for(const label of map.querySelectorAll('.map-area--terrain')){
+  const x=Number(label.dataset.areaX)*width/100;
+  const y=Number(label.dataset.areaY)*height/100;
+  const point=placeLabel(label,()=>labelOffsets.map(([dx,dy])=>[x+dx,y+dy]));
+  if(point){
+   label.style.left=point[0]+'px';
+   label.style.top=point[1]+'px';
+  }
  }
 }
 function placeIndex(ids,title,selected,kind,note=''){
@@ -339,18 +357,24 @@ function placeIndex(ids,title,selected,kind,note=''){
    (note?'<p class="muted">'+safe(note)+'</p>':'')+
    '<div class="places" role="group" aria-label="'+safe(title)+'">'+items.join('')+'</div></details>';
 }
-function factCards(facts){
-  return '<dl class="facts">'+facts.map(([value,caption])=>'<div><dt>'+safe(label(caption))+'</dt><dd>'+safe(label(value))+'</dd></div>').join('')+'</dl>';
+function factCards(facts,headline=false){
+  if(!facts.length)return '';
+  return '<dl class="facts d3-employment-kpis'+(headline?' facts--headline':'')+'">'+facts.map(([value,caption])=>'<div><dt>'+safe(label(caption))+'</dt><dd><strong>'+safe(label(value))+'</strong></dd></div>').join('')+'</dl>';
 }
 function cardMarkup(){
-  const place=districtPoints[activePlace(mapScene())];
+  const id=activePlace(mapScene());
+  const place=districtPoints[id];
+  const headlineFacts=id==='zone';
+  const facts=factCards(place.facts,headlineFacts);
   const detailLabels={life:T('Для жителя','For residents'),demand:T('Для инвестора','For investors'),access:T('Доступность','Getting there'),limit:T('Важно','Keep in mind')};
   const details=place.details?.map(([key,text])=>'<div><dt>'+detailLabels[key]+'</dt><dd>'+safe(label(text))+'</dd></div>').join('')??'';
-  return '<div class="card-lead"><div class="card-meta"><p class="eyebrow">'+safe(label(place.category))+'</p>'+
-   (place.status?'<span class="chip">'+safe(label(place.status))+'</span>':'')+'</div><h3 id="card-title">'+safe(place.name)+'</h3><p class="card-summary">'+safe(label(place.description))+'</p></div>'+
-   factCards(place.facts)+(details?'<details><summary>'+T('Что учесть покупателю','What buyers should know')+'</summary><dl class="detail-grid">'+details+'</dl></details>':'')+
-   '<div class="card-links">'+link(place.link,label(place.linkLabel) || T('Открыть на Google Maps','Open in Google Maps'))+'</div>'+
-   (place.sources?.length?'<div class="source-row"><strong>'+T('Источники','Sources')+'</strong>'+place.sources.map(([title,url])=>link(url,title,'source-link')).join('')+'</div>':'');
+  return '<div class="card-lead"><div class="d3-card-head"><span class="d3-index" aria-hidden="true">'+pinIcon(id)+'</span>'+
+   '<div><p class="d3-kicker">'+safe(label(place.category))+
+   (place.status?'<span class="place-status'+(place.future?' place-status--future':'')+'">'+safe(label(place.status))+'</span>':'')+'</p>'+
+   '<h3 id="card-title">'+safe(place.name)+'</h3></div></div>'+(headlineFacts?facts:'')+
+   '<p class="card-summary d3-meaning">'+safe(label(place.description))+'</p></div>'+
+   (headlineFacts?'':facts)+(details?'<details><summary>'+T('Что учесть покупателю','What buyers should know')+'</summary><dl class="detail-grid">'+details+'</dl></details>':'')+
+   (place.link?'<div class="card-links">'+link(place.link,label(place.linkLabel) || T('Открыть на карте','Show on map'))+'</div>':'');
 }
 function routeList(){
   const info = {
@@ -369,7 +393,7 @@ function routeList(){
    '<table aria-labelledby="routes-title"><thead><tr><th scope="col">'+T('Направление','Destination')+'</th><th scope="col">'+T('Время','Time')+
    '</th><th scope="col">'+T('Расстояние','Distance')+'</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>'+
    '<p class="muted">'+
-   T('Google Maps, «Выехать сейчас», 10.11.2026 около 13:25 по Дубаю. Это время на момент проверки: оно меняется с трафиком и точкой выезда.','Google Maps, Leave now, 10 Nov 2026 at about 13:25 Dubai time. Travel times vary with traffic and your starting point.')+
+   T('10.11.2026, около 13:25. Время в пути зависит от трафика.','10 Nov 2026, around 13:25. Travel times vary with traffic.')+
    '</p>'+link(satellite.city,T('Положение района в Дубае','Location within Dubai'))+'</details>';
 }
 function economyPanel(){
@@ -377,27 +401,25 @@ function economyPanel(){
  '<dl class="economy-grid">'+[
   [T('Какие компании здесь работают','Who operates here'),T('Xerox — технологии печати и документооборота; Reproflex3 — подготовка к флексопечати для упаковки; Dynagraph — решения для полиграфии; NDigitec — допечатная подготовка, цифровая печать и производство контента.','Xerox provides printing and document technology; Reproflex3 works in flexographic prepress for packaging; Dynagraph supplies print solutions; NDigitec works in prepress, digital printing and creative production.')],
   [T('Чем зона привлекает бизнес','Why businesses choose it'),T('В одном месте можно зарегистрировать компанию, снять склад или площадку под производство и найти подрядчиков по печати, упаковке и хранению. Для небольших медиакоманд in5 даёт доступ к студиям и оборудованию без необходимости строить собственные.','Businesses can register, lease a warehouse or production site, and find printing, packaging and storage suppliers in one district. in5 gives smaller media teams access to studios and equipment without setting up their own.')],
-  [T('Что известно об обороте','What is known about revenue'),T('Отдельный совокупный оборот компаний IMPZ в открытых источниках не найден. TECOM указал 421 млн AED выручки медиасегмента за 2025 год: это выручка оператора по трём медиарайонам, включая Media City и Studio City.','A combined turnover figure for IMPZ businesses was not found in public sources. TECOM reported AED 421 million of media segment revenue for 2025: the operator’s revenue across three media districts, including Media City and Studio City.')],
-  [T('Что это значит для района','What this means for the district'),T('Рабочие места связаны с печатью, производством, складами и медиаконтентом. Сотрудники и подрядчики — возможная аудитория для местной аренды. Данных о том, сколько из них живут в IMPZ, нет.','Employment is linked to print, production, warehousing and content creation. Staff and contractors are potential local renters. The share living in IMPZ is unknown.')]
- ].map(([h,p])=>'<div><dt>'+safe(h)+'</dt><dd>'+safe(p)+'</dd></div>').join('')+'</dl>'+
- '<div class="source-row">'+link(S.growth,'Dubai Media Office','source-link')+link(S.annual,'TECOM · Annual Report 2025','source-link')+'</div></section>';
+  [T('Выручка медиасегмента TECOM','TECOM media segment revenue'),T('421 млн AED за 2025 год по трём медиарайонам.','AED 421 million in 2025 across three media districts.')],
+  [T('Что это значит для района','What this means for the district'),T('Рабочие места связаны с печатью, производством, складами и медиаконтентом. Сотрудники и подрядчики — возможная аудитория для местной аренды.','Employment is linked to print, production, warehousing and content creation. Staff and contractors are potential local renters.')]
+ ].map(([h,p])=>'<div><dt>'+safe(h)+'</dt><dd>'+safe(p)+'</dd></div>').join('')+'</dl></section>';
 }
 function marketPanel(){
   const sale=marketMode==='sale';
   const row=marketRows[1];
   const stats=sale?[[amount(row.sale),T('Медиана цены 1BR','Median 1BR sale price')],[unitRate(row.rate),T('Медиана цены за площадь','Median price per area')],[fmt(row.sales),T('Зарегистрировано продаж 1BR','Registered 1BR sales')]]:
    [[amount(row.lease),T('Новая аренда 1BR / год','New 1BR lease / year')],[amount(row.renewal),T('Продление 1BR / год','1BR renewal / year')],[fmt(row.contracts),T('Новые договоры и продления 1BR','1BR new leases and renewals')]];
-  const columns=sale?[T('Медиана','Median'),T('За площадь','Per area'),T('Сделок','Sales')]:[T('Новые / год','New / year'),T('Продления / год','Renewals / year'),T('Всего','Total')];
-  return '<section class="market-box" aria-labelledby="market-heading"><div class="panel-head"><div><p class="eyebrow">'+T('Выборка за 12 месяцев по 02.10.2026','12 months ending 2 Oct 2026')+'</p><h3 id="market-heading">'+T('Квартиры по числу спален','Apartments by bedroom count')+'</h3></div>'+
-   '<div class="switch" role="group" aria-label="'+T('Тип рыночных данных','Market data type')+'">'+buttons([['sale',T('Продажи','Sales')],['rent',T('Аренда','Rent')]],'market',marketMode)+'</div></div>'+
+  const columns=sale?[T('Медиана','Median'),T('За площадь','Per area'),T('Сделок','Sales')]:[T('Новые / год','New / year'),T('Продления / год','Renewals / year'),T('Договоров','Contracts')];
+  return '<section class="market-box d3-info d3-info--flow" aria-labelledby="market-heading"><div class="d3-card-head"><div><p class="d3-kicker">'+T('Выборка за 12 месяцев по 02.10.2026','12 months ending 2 Oct 2026')+'</p><h3 id="market-heading">'+T('Квартиры по числу спален','Apartments by bedroom count')+'</h3></div></div>'+
+   '<div class="scene-options market-options" role="group" aria-label="'+T('Тип рыночных данных','Market data type')+'">'+buttons([['sale',T('Продажи','Sales')],['rent',T('Аренда','Rent')]],'market',marketMode)+'</div>'+
    factCards(stats)+'<table><thead><tr><th scope="col">'+T('Квартира','Apartment')+'</th>'+columns.map(c=>'<th scope="col">'+c+'</th>').join('')+'</tr></thead><tbody>'+
    marketRows.map(r=>'<tr><th scope="row">'+safe(label(r.label))+'</th>'+(sale?[amount(r.sale),unitRate(r.rate),fmt(r.sales)]:[amount(r.lease),amount(r.renewal),fmt(r.contracts)]).map(v=>'<td>'+safe(v)+'</td>').join('')+'</tr>').join('')+
-   '</tbody></table><p class="muted">'+(sale?T('BrickDXB по данным DLD. В выборке разные здания и стадии, включая более широкую географию поставщика.','BrickDXB analysis of DLD records. The sample spans different buildings and stages, including the provider’s wider geographic scope.'):
-    T('BrickDXB по данным Ejari. «Всего» включает новые договоры и продления, разбивка числа договоров по типу не раскрыта.','BrickDXB analysis of Ejari records. Totals include new leases and renewals. Counts by contract type are unavailable.'))+'</p></section>';
+   '</tbody></table>'+(sale?'<p class="muted">'+T('Выборка шире границ IMPZ.','The sample extends beyond IMPZ.')+'</p>':'')+'</section>';
 }
 function themeMarkup(){
   const scene=mapScene();
-  const filters=activeTheme.id==='everyday'?'<div class="filter-switch switch" role="group" aria-label="'+T('Тип места','Place type')+'">'+buttons(Object.entries(group).map(([id,title])=>[id,label(title)]),'near',nearGroup)+'</div>':'';
+  const filters=activeTheme.id==='everyday'?'<div class="scene-options filter-options" role="group" aria-label="'+T('Тип места','Place type')+'">'+buttons(Object.entries(group).map(([id,title])=>[id,label(title)]),'near',nearGroup)+'</div>':'';
   const titles={
    economy:[T('Как работает свободная зона IMPZ','How the IMPZ free zone works'),T('Производственные площадки, компании и медиаинкубатор TECOM.','Production facilities, businesses and TECOM’s media incubator.')],
    transport:[T('Что уже работает и куда можно доехать','Operating connections and where they take you'),T('Автобусы, метро и Etihad Rail уже работают. Gold Line показана отдельно как план.','Buses, the Metro and Etihad Rail already operate. Gold Line is shown separately as planned.')],
@@ -407,18 +429,18 @@ function themeMarkup(){
   const [title,lead]=titles[activeTheme.id]??[label(activeTheme.title),label(activeTheme.lead)];
   const bridgeNote=activeTheme.id==='transport'?
     '<p class="bridge-note muted"><span aria-hidden="true"></span>'+T('Мост между R73 и Al Yalayis · 375 м','Bridge between R73 and Al Yalayis · 375 m')+'</p>':'';
-  let mapDetails='';
+  const card=activeTheme.id==='market'?marketPanel():'<article id="detail-card" class="place-card d3-info d3-info--flow" aria-labelledby="card-title">'+cardMarkup()+'</article>';
+  let more=bridgeNote+(activeTheme.id==='transport'?routeList():'');
   if(scene.ids.length){
    const selected=activePlace(scene);
-   mapDetails='<article id="detail-card" class="place-card" aria-labelledby="card-title">'+cardMarkup()+'</article>'+bridgeNote;
    if(isEducation()){
-    mapDetails+=placeIndex(universityIds,T('Университеты рядом','Nearby universities'),selected,'campus-index',
+    more+=placeIndex(universityIds,T('Университеты рядом','Nearby universities'),selected,'campus-index',
      T('Кампусы Dubai Knowledge Park за пределами 3D-кадра. Маршруты доступны в карточках.','The Dubai Knowledge Park campuses are outside this 3D view. Open a card for directions.'));
    }
-   mapDetails+=placeIndex(scene.ids,T('Список точек карты','List of map landmarks'),selected,'map-place-index');
+   more+=placeIndex(scene.ids,T('Список точек карты','List of map landmarks'),selected,'map-place-index');
   }
-  return '<div class="panel-head"><div><h2>'+safe(title)+'</h2><p class="muted">'+safe(lead)+'</p></div></div>'+
-   filters+mapMarkup(scene)+mapDetails+(activeTheme.id==='economy'?economyPanel():'')+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
+  const context='<div class="theme-context"><h3>'+safe(title)+'</h3><p class="muted">'+safe(lead)+'</p></div>';
+  return filters+'<div class="d3-stage d3-stage--flow">'+mapMarkup(scene)+card+'</div>'+more+context+(activeTheme.id==='economy'?economyPanel():'');
 }
 
  function positionPins(root){
@@ -432,7 +454,7 @@ function themeMarkup(){
  function tabs(){
   return themes.map(theme=>{
    const active=theme.id===activeTheme.id;
-   return '<button type="button" id="tab-'+theme.id+'" role="tab" data-theme="'+theme.id+'" aria-controls="theme-panel" aria-selected="'+active+'" tabindex="'+(active?0:-1)+'">'+safe(label(theme.label))+'</button>';
+   return '<button type="button" class="d3-topic" id="tab-'+theme.id+'" role="tab" data-theme="'+theme.id+'" aria-controls="theme-panel" aria-selected="'+active+'" tabindex="'+(active?0:-1)+'">'+safe(label(theme.label))+'</button>';
   }).join('');
  }
  function render(nextLang,nextCurrency,nextSettings){
@@ -443,14 +465,18 @@ function themeMarkup(){
   const heading=settings.embedded?'h2':'h1';
   const districtUrl=new URL('./#district='+district.id,settings.assetsBase||document.baseURI);
   const overviewLink=settings.embedded?'<a class="text-link" href="'+safe(districtUrl.href)+'">'+T('Открыть обзор района','Open district overview')+'</a>':'';
-  return '<section class="scene-overview" data-scenes-for="'+safe(district.id)+'" aria-labelledby="district-title">'+
-   '<header class="scene-heading"><p class="eyebrow">'+T('Обзор района','District overview')+'</p><'+heading+' id="district-title">'+safe(district.name)+'</'+heading+'></header>'+
-   '<p class="scene-intro">'+safe(label(district.summary))+'</p>'+
-   '<div id="themes" class="themes" role="tablist" aria-label="'+T('Темы обзора','Overview topics')+'">'+tabs()+'</div>'+
+  return '<section class="scene-overview'+(settings.embedded?' d3-overview--embedded':'')+'" data-scenes-for="'+safe(district.id)+'" aria-labelledby="district-title">'+
+   '<header class="d3-heading"><div><p class="eyebrow">'+T('Обзор района','District overview')+'</p><'+heading+' id="district-title">'+safe(district.name)+'</'+heading+'></div>'+
+   '<p id="scene-hint" class="d3-hint">'+hint()+'</p></header>'+
+   '<div id="themes" class="d3-topics d3-topics--places" role="tablist" aria-label="'+T('Темы обзора','Overview topics')+'">'+tabs()+'</div>'+
    '<section id="theme-panel" class="panel" role="tabpanel" aria-labelledby="tab-'+activeTheme.id+'" tabindex="0">'+themeMarkup()+'</section>'+
-   '<div class="scene-actions">'+overviewLink+'<button class="button primary" type="button" data-scenes-projects>'+
+   '<p class="scene-intro muted">'+safe(label(district.summary))+'</p>'+
+   '<div class="scene-actions d3-summary-actions">'+overviewLink+'<button class="button primary" type="button" data-scenes-projects>'+
    (settings.embedded?T('К квартирам','Apartments'):T('К проектам','Projects'))+' →</button></div>'+
    '<p class="scene-announcement" role="status"></p></section>';
+ }
+ function hint(){
+  return activeTheme.id==='market'?T('Сделки и аренда в IMPZ','Sales and rentals in IMPZ'):T('Выберите метку на карте','Choose a marker on the map');
  }
  function updatePanel(root,focus){
   const panel=root.querySelector('#theme-panel');
@@ -463,6 +489,7 @@ function themeMarkup(){
   const next=themes.find(theme=>theme.id===id);
   if(!next)return;
   activeTheme=next;
+  root.querySelector('#scene-hint').textContent=hint();
   root.querySelector('#themes').innerHTML=tabs();
   updatePanel(root,'#tab-'+id);
  }
@@ -481,8 +508,9 @@ function themeMarkup(){
    const card=root.querySelector('#detail-card');
    card.innerHTML=cardMarkup();
    root.querySelectorAll('[data-place]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.place===place)));
+   spreadPins(root.querySelector('.map'));
    root.querySelector('.scene-announcement').textContent=T('Карточка открыта','Card opened')+' · '+districtPoints[place].name;
-   if(pointerSelection&&(matchMedia('(max-width:660px)').matches||button.closest('.place-index'))){
+   if(pointerSelection&&(matchMedia('(max-width:760px)').matches||button.closest('.place-index'))){
     card.querySelector('.card-lead').scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
    }
    return;
