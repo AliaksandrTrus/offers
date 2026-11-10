@@ -148,6 +148,7 @@
  function controls(){return `<div class="d3-controls"><button type="button" class="button d3-arrow" data-d3-step="-1" ${slide===0?'disabled':''}>← ${L('Назад','Back')}</button><div class="d3-progress"><strong>${String(slide+1).padStart(2,'0')}</strong><span>/ ${String(topics.length).padStart(2,'0')}</span><div aria-hidden="true">${topics.map((_,i)=>`<i class="${i===slide?'is-current':''}"></i>`).join('')}</div></div><button type="button" class="button primary d3-arrow" ${slide===topics.length-1?'data-d3-projects':'data-d3-step="1"'}>${slide===topics.length-1?(presentation.embedded?L('К квартирам','Apartments'):L('К проектам','Projects')):L('Далее','Next')} →</button></div>`;}
  function overview(key,lang,code,settings={}){
   presentation=settings;active=findByKey(key);if(!active)return '';
+  if(active.sceneOverview&&window.DistrictScenes)return window.DistrictScenes.overview(active,lang,code,settings);
   data=active.terrain;c=data.cards;
   // Standalone offers can briefly have an older shared stylesheet in the browser cache.
   const places=data.placeScene&&(data.marketSummary||getComputedStyle(document.documentElement).getPropertyValue('--d3-places-layout').trim()==='1');
@@ -181,4 +182,227 @@
  document.addEventListener('pointerup',e=>{if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;pointer=null;if(Math.abs(dx)>=55&&Math.abs(dx)>Math.abs(dy)*1.5){suppressClickUntil=Date.now()+450;selectSlide(slide+(dx<0?1:-1));}},{passive:true});
  document.addEventListener('pointercancel',()=>{pointer=null;},{passive:true});
  window.DistrictSlides={overview,findByKey,has:key=>!!findByKey(key),brief(id,lang){const d=find(id);return d?`<p>${esc(d.summary[lang])}</p><a href="#district=${esc(d.id)}">${lang==='ru'?'Подробнее о районе':'More about the district'} →</a>`:'';}};
+})();
+
+(() => {
+ 'use strict';
+ const states = new Map();
+
+ function createController(district){
+ const {themes,districtPoints,routeRows,marketRows,mapFrames,satellite,terrainImage,origin,images}=district.sceneOverview;
+ let settings={};
+ const directions = destination => 'https://www.google.com/maps/dir/?' + new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});
+ const safe = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let lang = 'ru';
+let currencyCode = 'AED';
+let activeTheme = themes[0];
+let scale = 'district';
+let localView = 'terrain';
+let marketMode = 'sale';
+const selections = new Map();
+const T = (ru,en) => lang==='ru'?ru:en;
+const label = value => typeof value==='string'?value:value?.[lang]??'';
+const fmt = (value, digits=0) => new Intl.NumberFormat(T('ru-RU','en-GB'),{minimumFractionDigits:digits,maximumFractionDigits:digits}).format(value);
+const amount = aed => fmt(currencyCode==='AED'?aed:aed/district.terrain.rate)+' '+currencyCode;
+const unitRate = rate => currencyCode==='AED'?fmt(rate,1)+' AED / sq ft':fmt(rate/(district.terrain.rate*0.09290304),1)+' USD / m²';
+const mapNote = scene => {
+  if(scene.terrain)return T('Авторская 3D-визуализация. Очертания отдельных зданий обобщены.','Original 3D illustration. Individual building shapes are generalized.');
+  if(scene.frame==='city')return T('Дубай · магистрали и ориентиры.','Dubai · major roads and landmarks.');
+  return T('Карта OpenStreetMap. Высоты показаны приближённо.','OpenStreetMap-based map. Building heights are approximate.');
+};
+const chosenThemeKey = () => activeTheme.id+'-'+(activeTheme.id==='transport'?scale:'district');
+
+function mapScene(){
+ if(activeTheme.id==='transport'&&scale==='city')return {frame:'city',...images.city,ids:['origin','burj','atlantis']};
+ const ids=activeTheme.points??[];
+ if(localView==='terrain')return {frame:'district',...images.terrain,ids,terrain:true,crop:terrainImage.crops[activeTheme.id]};
+ return {frame:'district',...images[activeTheme.id==='transport'?'roads':'district'],ids};
+}
+function project([lat,lon],frame){
+  const [west,south,east,north] = mapFrames[frame];
+  return [(lon-west)/(east-west)*100,(north-lat)/(north-south)*100];
+}
+function cropPoint([x,y],[left,top,right,bottom]){
+  return [(x-left)/(right-left)*100,(y-top)/(bottom-top)*100];
+}
+const markerNo = i => String(i+1).padStart(2,'0');
+function activePlace(scene){
+  return selections.get(chosenThemeKey()) ?? scene.ids[0];
+}
+function link(url,text,klass='text-link'){
+  return '<a class="'+klass+'" href="'+safe(url)+'" target="_blank" rel="noopener noreferrer">'+safe(text)+' <span aria-hidden="true">↗</span></a>';
+}
+function buttons(values,attr,selected){
+  return values.map(([id,text])=>'<button type="button" data-'+attr+'="'+id+'" aria-pressed="'+(id===selected)+'">'+safe(text)+'</button>').join('');
+}
+function mapMarkup(scene){
+  const isCity = scene.frame==='city';
+  const crop = scene.crop??[0,0,100,100];
+  const [left,top,right,bottom]=crop;
+  const cropWidth=(right-left)/100,cropHeight=(bottom-top)/100;
+  const imageStyle='--img-x:'+(-left/cropWidth)+'%;--img-y:'+(-top/cropHeight)+'%;--img-w:'+(100/cropWidth)+'%;--img-h:'+(100/cropHeight)+'%';
+  const ratio=scene.width*cropWidth/(scene.height*cropHeight);
+  const points = scene.ids.map(id=>{
+    const place = districtPoints[id];
+    const [x,y] = scene.terrain?cropPoint(terrainImage.anchors[id],crop):project(place.point,scene.frame);
+    const [ox,oy] = place.offset??[0,0];
+    const spread=activeTheme.id==='transport'&&!isCity?1.5:1;
+    return {id,place,x,y,px:x+ox*spread,py:y+oy*spread};
+  });
+  const pins = points.map(({id,place,px,py},i)=>'<button class="pin" type="button" data-place="'+id+'" style="--x:'+px+'%;--y:'+py+'%" aria-label="'+safe(place.name)+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'">'+markerNo(i)+'</button>').join('');
+  const displaced = points.filter(p=>p.x!==p.px||p.y!==p.py);
+  const lines = displaced.map(p=>'<path d="M '+p.x+' '+p.y+' L '+p.px+' '+p.py+'" />').join('');
+  const anchors = displaced.map(p=>'<span class="map-anchor" style="left:'+p.x+'%;top:'+p.y+'%" aria-hidden="true"></span>').join('');
+  const terrainAreas = terrainImage.areas.map(([name,x,y])=>[name,...cropPoint([x,y],crop)])
+   .filter(([,x,y])=>x>7&&x<92&&y>8&&y<92)
+   .map(([name,x,y])=>'<span class="map-area map-area--terrain" style="left:'+x+'%;top:'+y+'%" aria-hidden="true">'+safe(name)+'</span>').join('');
+  const area = scene.terrain?terrainAreas:isCity?'<span class="map-area map-area--city" aria-hidden="true">DUBAI</span>':'<span class="map-area map-area--jvt" aria-hidden="true">JVT</span><span class="map-area map-area--impz" aria-hidden="true">IMPZ</span><span class="map-area map-area--sports" aria-hidden="true">Dubai Sports City</span>';
+  return '<figure class="map-figure'+(isCity?' map-figure--city':'')+'"><div class="map'+(isCity?' map--city':'')+'" data-view="'+(scene.terrain?'3d':isCity?'city':'osm')+'" style="--map-ratio:'+ratio+'"><img src="'+safe(new URL(scene.image,settings.assetsBase||document.baseURI).href)+'" width="'+scene.width+'" height="'+scene.height+'" style="'+imageStyle+'" alt="" />'+
+   '<div class="map-overlay"><svg class="leaders" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">'+lines+'</svg>'+anchors+area+
+   '<span class="compass" aria-hidden="true">↑ N</span><div class="pins" role="group" aria-label="'+T('Объекты на карте','Map landmarks')+'">'+pins+'</div></div>'+
+   '<p class="map-fallback" hidden>'+T('Подложка недоступна. Выбери объект в списке ниже.','The basemap is unavailable. Choose an item from the list below.')+'</p></div>'+
+   '<figcaption><span>'+safe(mapNote(scene))+'</span><div>'+
+   link('https://www.openstreetmap.org/copyright','© OpenStreetMap','source-link')+
+   link(satellite[scene.frame],T('Спутник Google Maps','Google Maps satellite'),'source-link')+'</div></figcaption></figure>';
+}
+function placeList(scene){
+  if(!scene.ids.length)return '';
+  const items=scene.ids.map((id,i)=>'<button type="button" data-place="'+id+'" aria-controls="detail-card" aria-pressed="'+(activePlace(scene)===id)+'"><span>'+markerNo(i)+'</span><strong>'+safe(districtPoints[id].name)+'</strong></button>');
+  return '<div class="places" role="group" aria-label="'+T('Выбрать место','Choose a landmark')+'">'+items.join('')+'</div><article id="detail-card" class="place-card" aria-labelledby="card-title">'+cardMarkup()+'</article>';
+}
+function factCards(facts){
+  return '<dl class="facts">'+facts.map(([value,caption])=>'<div><dt>'+safe(label(caption))+'</dt><dd>'+safe(label(value))+'</dd></div>').join('')+'</dl>';
+}
+function cardMarkup(){
+  const place=districtPoints[activePlace(mapScene())];
+  const detailLabels={life:T('Для жителя','For residents'),demand:T('Для инвестора','For investors'),access:T('Доступность','Getting there'),limit:T('Важно','Keep in mind')};
+  const details=place.details?.map(([key,text])=>'<div><dt>'+detailLabels[key]+'</dt><dd>'+safe(label(text))+'</dd></div>').join('')??'';
+  return '<div class="card-meta"><p class="eyebrow">'+safe(label(place.category))+'</p>'+
+   (place.status?'<span class="chip">'+safe(label(place.status))+'</span>':'')+'</div><h3 id="card-title">'+safe(place.name)+'</h3><p class="card-summary">'+safe(label(place.description))+'</p>'+
+   factCards(place.facts)+(details?'<details><summary>'+T('Что учесть покупателю','What buyers should know')+'</summary><dl class="detail-grid">'+details+'</dl></details>':'')+
+   link(place.link,label(place.linkLabel) || T('Открыть на Google Maps','Open in Google Maps'));
+}
+function routeList(){
+  const info = {
+   toll:T('Платный участок','Toll section'),
+   dwc:T('Точка аэропорта. Конкретная дверь высадки не подтверждена.','Airport point. The exact drop-off door is unconfirmed.')
+  };
+  return '<section class="routes" aria-labelledby="routes-title"><h3 id="routes-title">'+T('На автомобиле от City Centre Me’aisem','Driving from City Centre Me’aisem')+'</h3><p class="muted">'+
+   T('Основные маршруты Google Maps на 10.11.2026. Маршруты с платными дорогами учитывались.','Primary Google Maps routes on 10 Nov 2026. Toll routes were included.')+
+   '</p><ul>'+routeRows.map(([name,km,to,note])=>'<li><div>'+link(directions(to),name)+(note?'<small>'+safe(info[note])+'</small>':'')+'</div><strong>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</strong></li>').join('')+'</ul></section>';
+}
+function marketPanel(){
+  const sale=marketMode==='sale';
+  const row=marketRows[1];
+  const stats=sale?[[amount(row.sale),T('Медиана цены 1BR','Median 1BR sale price')],[unitRate(row.rate),T('Медиана цены за площадь','Median price per area')],[fmt(row.sales),T('Зарегистрировано продаж 1BR','Registered 1BR sales')]]:
+   [[amount(row.lease),T('Новая аренда 1BR / год','New 1BR lease / year')],[amount(row.renewal),T('Продление 1BR / год','1BR renewal / year')],[fmt(row.contracts),T('Новые договоры и продления 1BR','1BR new leases and renewals')]];
+  const columns=sale?[T('Медиана','Median'),T('За площадь','Per area'),T('Сделок','Sales')]:[T('Новые / год','New / year'),T('Продления / год','Renewals / year'),T('Всего','Total')];
+  return '<section class="market-box" aria-labelledby="market-heading"><div class="panel-head"><div><p class="eyebrow">'+T('Выборка за 12 месяцев по 02.10.2026','12 months ending 2 Oct 2026')+'</p><h3 id="market-heading">'+T('Квартиры по числу спален','Apartments by bedroom count')+'</h3></div>'+
+   '<div class="switch" role="group" aria-label="'+T('Тип рыночных данных','Market data type')+'">'+buttons([['sale',T('Продажи','Sales')],['rent',T('Аренда','Rent')]],'market',marketMode)+'</div></div>'+
+   factCards(stats)+'<table><thead><tr><th scope="col">'+T('Квартира','Apartment')+'</th>'+columns.map(c=>'<th scope="col">'+c+'</th>').join('')+'</tr></thead><tbody>'+
+   marketRows.map(r=>'<tr><th scope="row">'+safe(label(r.label))+'</th>'+(sale?[amount(r.sale),unitRate(r.rate),fmt(r.sales)]:[amount(r.lease),amount(r.renewal),fmt(r.contracts)]).map(v=>'<td>'+safe(v)+'</td>').join('')+'</tr>').join('')+
+   '</tbody></table><p class="muted">'+(sale?T('BrickDXB по данным DLD. В выборке разные здания и стадии, включая более широкую географию поставщика.','BrickDXB analysis of DLD records. The sample spans different buildings and stages, including the provider’s wider geographic scope.'):
+    T('BrickDXB по данным Ejari. «Всего» включает новые договоры и продления, разбивка числа договоров по типу не раскрыта.','BrickDXB analysis of Ejari records. Totals include new leases and renewals. Counts by contract type are unavailable.'))+'</p></section>';
+}
+function themeMarkup(){
+  const scene=mapScene();
+  const scaleControl=activeTheme.id==='transport'?'<div class="switch" role="group" aria-label="'+T('Масштаб карты','Map scale')+'">'+buttons([['district',T('Район','District')],['city',T('Дубай','Dubai')]],'scale',scale)+'</div>':'';
+  const viewControl=scene.frame==='district'?'<div class="switch" role="group" aria-label="'+T('Тип подложки','Basemap type')+'">'+buttons([['terrain',T('3D-вид','3D view')],['osm',T('Карта OSM','OSM map')]],'view',localView)+'</div>':'';
+  return '<div class="panel-head"><div><p class="eyebrow">'+safe(label(activeTheme.label))+'</p><h2>'+safe(label(activeTheme.title))+'</h2><p class="muted">'+safe(label(activeTheme.lead))+'</p></div>'+
+   '<div class="map-tools">'+scaleControl+viewControl+'</div></div>'+
+   mapMarkup(scene)+placeList(scene)+(activeTheme.id==='transport'?routeList():'')+(activeTheme.id==='market'?marketPanel():'');
+}
+
+ function tabs(){
+  return themes.map((theme,i)=>{
+   const active=theme.id===activeTheme.id;
+   return '<button type="button" id="tab-'+theme.id+'" role="tab" data-theme="'+theme.id+'" aria-controls="theme-panel" aria-selected="'+active+'" tabindex="'+(active?0:-1)+'"><span>'+markerNo(i)+'</span>'+safe(label(theme.label))+'</button>';
+  }).join('');
+ }
+ function render(nextLang,nextCurrency,nextSettings){
+  lang=nextLang;
+  currencyCode=nextCurrency;
+  settings=nextSettings;
+  const heading=settings.embedded?'h2':'h1';
+  const districtUrl=new URL('./#district='+district.id,settings.assetsBase||document.baseURI);
+  const overviewLink=settings.embedded?'<a class="text-link" href="'+safe(districtUrl.href)+'">'+T('Открыть обзор района','Open district overview')+'</a>':'';
+  return '<section class="scene-overview" data-scenes-for="'+safe(district.id)+'" aria-labelledby="district-title">'+
+   '<header class="scene-heading"><p class="eyebrow">'+T('Обзор района','District overview')+'</p><'+heading+' id="district-title">'+safe(district.name)+'</'+heading+'></header>'+
+   '<p class="scene-intro">'+safe(label(district.summary))+'</p>'+
+   '<div id="themes" class="themes" role="tablist" aria-label="'+T('Темы обзора','Overview topics')+'">'+tabs()+'</div>'+
+   '<section id="theme-panel" class="panel" role="tabpanel" aria-labelledby="tab-'+activeTheme.id+'" tabindex="0">'+themeMarkup()+'</section>'+
+   '<div class="scene-actions">'+overviewLink+'<button class="button primary" type="button" data-scenes-projects>'+
+   (settings.embedded?T('К квартирам','Apartments'):T('К проектам','Projects'))+' →</button></div>'+
+   '<p class="scene-announcement" role="status"></p></section>';
+ }
+ function updatePanel(root,focus){
+  const panel=root.querySelector('#theme-panel');
+  panel.setAttribute('aria-labelledby','tab-'+activeTheme.id);
+  panel.innerHTML=themeMarkup();
+  if(focus)root.querySelector(focus)?.focus({preventScroll:true});
+ }
+ function setTheme(root,id){
+  const next=themes.find(theme=>theme.id===id);
+  if(!next)return;
+  activeTheme=next;
+  root.querySelector('#themes').innerHTML=tabs();
+  updatePanel(root,'#tab-'+id);
+ }
+ function click(root,button){
+  const {theme,scale:nextScale,view,market,place}=button.dataset;
+  if(theme){setTheme(root,theme);return;}
+  if(nextScale){scale=nextScale;updatePanel(root,'button[data-scale="'+scale+'"]');return;}
+  if(view){localView=view;updatePanel(root,'button[data-view="'+localView+'"]');return;}
+  if(market){
+   marketMode=market;
+   root.querySelector('.market-box').outerHTML=marketPanel();
+   root.querySelector('button[data-market="'+marketMode+'"]')?.focus({preventScroll:true});
+   return;
+  }
+  if(place&&mapScene().ids.includes(place)){
+   selections.set(chosenThemeKey(),place);
+   root.querySelector('#detail-card').innerHTML=cardMarkup();
+   root.querySelectorAll('[data-place]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.place===place)));
+   root.querySelector('.scene-announcement').textContent=T('Карточка открыта','Card opened')+' · '+districtPoints[place].name;
+   return;
+  }
+  if(button.hasAttribute('data-scenes-projects')){
+   if(settings.onProjects){settings.onProjects();return;}
+   const projects=document.getElementById('district-projects');
+   projects?.scrollIntoView({block:'start',behavior:'instant'});
+   projects?.focus({preventScroll:true});
+  }
+ }
+ function keyboard(root,event){
+  if(!event.target.closest('[role="tablist"]')||!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+  event.preventDefault();
+  const i=themes.indexOf(activeTheme);
+  const next=event.key==='Home'?0:event.key==='End'?themes.length-1:(i+(event.key==='ArrowRight'?1:-1)+themes.length)%themes.length;
+  setTheme(root,themes[next].id);
+ }
+ return {render,click,keyboard};
+ }
+
+ document.addEventListener('click',event=>{
+  const button=event.target.closest('button');
+  const root=button?.closest('[data-scenes-for]');
+  if(root)states.get(root.dataset.scenesFor)?.click(root,button);
+ });
+ document.addEventListener('keydown',event=>{
+  const root=event.target.closest('[data-scenes-for]');
+  if(root)states.get(root.dataset.scenesFor)?.keyboard(root,event);
+ });
+ document.addEventListener('error',event=>{
+  if(!(event.target instanceof HTMLImageElement))return;
+  const map=event.target.closest('[data-scenes-for] .map');
+  if(!map)return;
+  map.classList.add('is-missing');
+  map.querySelector('.map-fallback').hidden=false;
+ },true);
+ window.DistrictScenes={
+  overview(district,lang,currency,settings){
+   if(!states.has(district.id))states.set(district.id,createController(district));
+   return states.get(district.id).render(lang,currency,settings);
+  }
+ };
 })();
