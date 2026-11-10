@@ -53,28 +53,29 @@
   const options = scene.objects.map((id,index) => `
    <button type="button" class="d3-place-option${selected(id)?' is-selected':''}" data-d3-object="${esc(id)}"
     aria-label="${esc(tx(c[id].category))} · ${esc(tx(c[id].cardTitle))}" aria-pressed="${selected(id)}" aria-controls="d3-card">
-    <i>${placeNumber(index)}</i><span><strong>${esc(tx(c[id].category))}</strong><small>${esc(name(id))}</small></span>
+    <i>${placeNumber(index)}</i>${scene.numbered ? `<strong>${esc(name(id))}</strong>` : `<span><strong>${esc(tx(c[id].category))}</strong><small>${esc(name(id))}</small></span>`}
    </button>`).join('');
   const image = new URL(scene.image,presentation.assetsBase||document.baseURI).href;
-  return `<div class="d3-places-heading"><h2>${esc(tx(scene.heading))}</h2><p>${esc(tx(scene.instructions))}</p></div>
+  return `<div class="d3-places-heading">${scene.numbered ? `<p class="eyebrow">${esc(tx(scene))}</p>` : ''}<h2${scene.numbered?' id="d3-place-heading"':''}>${esc(tx(scene.heading))}</h2>${scene.numbered ? '' : `<p>${esc(tx(scene.instructions))}</p>`}</div>
    <div class="d3-place-frame">
     <div class="d3-map-window d3-places-map">
      <div class="d3-places-plane" style="--d3-place-ratio:${scene.width}/${scene.height}">
       <img class="d3-places-image" src="${esc(image)}" width="${scene.width}" height="${scene.height}" alt="" draggable="false">
-      <svg class="d3-place-leaders" viewBox="0 0 ${scene.width} ${scene.height}" aria-hidden="true">${leaders}</svg>
+      ${scene.numbered ? '' : `<svg class="d3-place-leaders" viewBox="0 0 ${scene.width} ${scene.height}" aria-hidden="true">${leaders}</svg>`}
       ${labels}<div role="group" aria-label="${L('Объекты на изображении','Objects in the image')}">${pins}</div>
      </div>
-     <span class="d3-visualization d3-place-visualization">${L('3D-визуализация','3D visualization')}</span>
+     <span class="d3-visualization d3-place-visualization">${scene.numbered ? '↑ N' : L('3D-визуализация','3D visualization')}</span>
      <p class="d3-place-unavailable" hidden>${L('Карта недоступна. Выберите объект в списке ниже.','The map is unavailable. Choose a place in the list below.')}</p>
     </div>
-    <div class="d3-place-caption"><span>${L('Условные очертания застройки','Illustrative building outlines')}</span>
-     <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>
+    <div class="d3-place-caption"><span>${scene.numbered ? esc(tx(scene.instructions)) : L('Условные очертания застройки','Illustrative building outlines')}</span>
+     ${scene.numbered ? '' : '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>'}
     </div>
    </div>
    <div class="d3-place-list" role="group" aria-label="${L('Места рядом','Nearby places')}">${options}</div>`;
  }
 
  function placeCard(place) {
+  if (topics[slide].numbered) return summaryPlaceCard(place, topics[slide]);
   const origin = topics[slide].origin;
   const route = new URL('https://www.google.com/maps/dir/');
   route.searchParams.set('api','1');
@@ -95,6 +96,38 @@
    </div>`;
  }
 
+ function summaryPlaceCard(place, scene) {
+  const atOrigin = place.mapQuery === scene.originQuery;
+  const route = new URL(atOrigin ? 'https://www.google.com/maps/search/' : 'https://www.google.com/maps/dir/');
+  route.search = new URLSearchParams(atOrigin
+   ? {api:'1', query:place.mapQuery}
+   : {api:'1', origin:scene.originQuery, destination:place.mapQuery, travelmode:'driving'}).toString();
+  const facts = place.facts.map(({label,value}) => `<div><dt>${esc(tx(label))}</dt><dd>${esc(tx(value))}</dd></div>`).join('');
+  const details = [
+   [L('Для жителя','For residents'),place.details.life],
+   [L('Для инвестора','For investors'),place.details.demand],
+   [L('Доступность','Getting there'),place.access],
+   [L('Важно','Keep in mind'),place.details.limit]
+  ].filter(([,value]) => value).map(([label,value]) => `<div><dt>${label}</dt><dd>${esc(tx(value))}</dd></div>`).join('');
+  return `<div class="d3-summary-meta"><p class="d3-place-meta">${esc(tx(place.category))} · ${esc(tx(place.area))}</p>
+   <span>${L('Работает','Open')}</span></div><h3 id="d3-card-title">${esc(tx(place.cardTitle))}</h3>
+   <p class="d3-place-description">${esc(tx(place.description))}</p><dl class="d3-place-facts">${facts}</dl>
+   <details class="d3-summary-details"><summary>${L('Что учесть покупателю','What buyers should know')}</summary><dl>${details}</dl></details>
+   <a class="d3-summary-link" href="${esc(route.href)}" target="_blank" rel="noopener noreferrer">${atOrigin?L('Открыть на карте','Open map'):L('Маршрут от ','Directions from ')+esc(tx(scene.origin.name))}</a>`;
+ }
+
+ function marketSummary(market) {
+  const facts = [
+   [L('Цена продажи','Sale price'),money(market.saleAed)],
+   [L('Цена за площадь','Price per area'),rate(market.saleAedPerSqFt)],
+   [L('Новый договор аренды','New lease'),money(market.newLeaseAed)+' <small>'+L('в год','per year')+'</small>']
+  ];
+  return `<section class="d3-market-summary" aria-labelledby="d3-market-summary-title">
+   <p class="eyebrow">${L('Продажи и аренда','Sales and rentals')}</p><h2 id="d3-market-summary-title">${esc(tx(market.title))}</h2>
+   <dl class="d3-place-facts">${facts.map(([label,value]) => `<div><dt>${label}</dt><dd>${value}</dd></div>`).join('')}</dl>
+   <p class="d3-market-note">${esc(tx(market.note))}</p></section>`;
+ }
+
  function head(id){const v=c[id],num=topics[slide].objects.indexOf(id)+1;return `<div class="d3-card-head"><span class="d3-index">${num}</span><div><p class="d3-kicker">${esc(tx(v.kicker))}</p><h2 id="d3-card-title">${esc(tx(v.cardTitle))}</h2></div></div>${v.cardPeriod?`<p class="d3-period">${esc(tx(v.cardPeriod))}</p>`:''}`;}
  function card(id){const kind=c[id].kind;
   if(kind==='place')return placeCard(c[id]);
@@ -109,17 +142,26 @@
  }
  function stage(){
   const id=choice[slide], scene=topics[slide], places=isPlacesScene();
-  return `<section class="d3-stage d3-${scene.id}${places?' d3-stage--places':''}" id="d3-stage" role="tabpanel" aria-labelledby="d3-topic-${slide}" tabindex="0">${places?placesTerrain(scene):terrain()}<article id="d3-card" class="d3-info d3-info--${c[id].kind}${c[id].compactPeriod?' d3-info--compact-period':''}" data-card="${id}" aria-live="polite" aria-atomic="true">${card(id)}</article></section>`;
+  const access = scene.numbered ? 'aria-labelledby="d3-place-heading"' : `role="tabpanel" aria-labelledby="d3-topic-${slide}"`;
+  return `<section class="d3-stage d3-${scene.id}${places?' d3-stage--places':''}" id="d3-stage" ${access} tabindex="0">${places?placesTerrain(scene):terrain()}<article id="d3-card" class="d3-info d3-info--${c[id].kind}${c[id].compactPeriod?' d3-info--compact-period':''}" data-card="${id}" aria-live="polite" aria-atomic="true">${card(id)}</article></section>`;
  }
  function controls(){return `<div class="d3-controls"><button type="button" class="button d3-arrow" data-d3-step="-1" ${slide===0?'disabled':''}>← ${L('Назад','Back')}</button><div class="d3-progress"><strong>${String(slide+1).padStart(2,'0')}</strong><span>/ ${String(topics.length).padStart(2,'0')}</span><div aria-hidden="true">${topics.map((_,i)=>`<i class="${i===slide?'is-current':''}"></i>`).join('')}</div></div><button type="button" class="button primary d3-arrow" ${slide===topics.length-1?'data-d3-projects':'data-d3-step="1"'}>${slide===topics.length-1?(presentation.embedded?L('К квартирам','Apartments'):L('К проектам','Projects')):L('Далее','Next')} →</button></div>`;}
  function overview(key,lang,code,settings={}){
   presentation=settings;active=findByKey(key);if(!active)return '';
   data=active.terrain;c=data.cards;
   // Standalone offers can briefly have an older shared stylesheet in the browser cache.
-  const places=data.placeScene&&getComputedStyle(document.documentElement).getPropertyValue('--d3-places-layout').trim()==='1';
+  const places=data.placeScene&&(data.marketSummary||getComputedStyle(document.documentElement).getPropertyValue('--d3-places-layout').trim()==='1');
   topics=places?[...data.slides,data.placeScene]:data.slides;
   if(!states.has(active.id))states.set(active.id,{slide:0,choice:topics.map(t=>t.objects[0])});
   const saved=states.get(active.id);slide=Math.min(saved.slide,topics.length-1);choice=saved.choice;choice[slide]??=topics[slide].objects[0];language=lang;currency=code;
+  if (data.marketSummary) {
+   const districtUrl = new URL('./#district='+active.id, settings.assetsBase||document.baseURI);
+   return `<section class="d3-overview d3-overview--summary${settings.embedded?' d3-overview--embedded':''}" aria-labelledby="district-title">
+    <div class="d3-heading"><div><p class="eyebrow">${L('Обзор района','District overview')}</p><${settings.embedded?'h2':'h1'} id="district-title">${esc(active.name)}</${settings.embedded?'h2':'h1'}></div></div>
+    <p class="d3-summary-intro">${esc(tx(active.summary))}</p><div id="d3-stage-wrap">${stage()}</div>${marketSummary(data.marketSummary)}
+    <div class="d3-summary-actions">${settings.embedded?`<a class="d3-summary-link" href="${esc(districtUrl.href)}">${L('Открыть обзор района','Open district overview')}</a>`:''}
+    <button type="button" class="button primary" data-d3-projects>${settings.embedded?L('К квартирам','Apartments'):L('К проектам','Projects')} →</button></div></section>`;
+  }
   return `<section class="d3-overview${settings.embedded?' d3-overview--embedded':''}" aria-labelledby="district-title"><div class="d3-heading"><div><p class="eyebrow">${L('Обзор района','District overview')}</p><${settings.embedded?'h2':'h1'} id="district-title">${esc(active.name)}</${settings.embedded?'h2':'h1'}></div><p class="d3-hint">${places?L('Выберите метку на карте','Choose a marker on the map'):L('Наведите на метку или нажмите её','Hover over a marker or tap it')}</p></div><div class="d3-topics${places?' d3-topics--places':''}" role="tablist" aria-label="${L('Темы обзора','Overview topics')}">${topicTabs()}</div><div id="d3-stage-wrap">${stage()}</div><div id="d3-controls-wrap">${controls()}</div></section>`;
  }
  function selectObject(id){if(!root()||!topics[slide].objects.includes(id)||id===choice[slide])return;choice[slide]=id;const info=document.getElementById('d3-card');info.dataset.card=id;info.className='d3-info d3-info--'+c[id].kind+(c[id].compactPeriod?' d3-info--compact-period':'');info.innerHTML=card(id);root().querySelectorAll('[data-d3-object]').forEach(b=>{const chosen=b.dataset.d3Object===id;b.setAttribute('aria-pressed',String(chosen));b.classList.toggle('is-selected',chosen);});}
@@ -134,8 +176,8 @@
   map.classList.add('d3-places-map--missing');
   map.querySelector('.d3-place-unavailable').hidden=false;
  },true);
- document.addEventListener('keydown',e=>{if(!e.target.closest('.d3-overview')||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey)return;if(e.target.closest('[data-d3-object]')&&['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();const ids=topics[slide].objects,i=ids.indexOf(choice[slide]);const id=ids[(i+(e.key==='ArrowDown'?1:-1)+ids.length)%ids.length];selectObject(id);root().querySelector(`[data-d3-object="${id}"]`)?.focus({preventScroll:true});return}if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const fromTopics=e.target.closest('.d3-topics');selectSlide(e.key==='Home'?0:e.key==='End'?topics.length-1:slide+(e.key==='ArrowRight'?1:-1));const target=fromTopics?root().querySelector('[aria-selected="true"]'):document.getElementById('d3-stage');target?.focus({preventScroll:true});});
- document.addEventListener('pointerdown',e=>{if(!e.target.closest('.d3-map-window')||!['touch','pen'].includes(e.pointerType)){pointer=null;return}pointer={x:e.clientX,y:e.clientY,id:e.pointerId};},{passive:true});
+ document.addEventListener('keydown',e=>{if(!e.target.closest('.d3-overview')||e.ctrlKey||e.altKey||e.metaKey||e.shiftKey)return;if(e.target.closest('[data-d3-object]')&&['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();const ids=topics[slide].objects,i=ids.indexOf(choice[slide]);const id=ids[(i+(e.key==='ArrowDown'?1:-1)+ids.length)%ids.length];selectObject(id);root().querySelector(`[data-d3-object="${id}"]`)?.focus({preventScroll:true});return}if(topics.length<2||!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const fromTopics=e.target.closest('.d3-topics');selectSlide(e.key==='Home'?0:e.key==='End'?topics.length-1:slide+(e.key==='ArrowRight'?1:-1));const target=fromTopics?root().querySelector('[aria-selected="true"]'):document.getElementById('d3-stage');target?.focus({preventScroll:true});});
+ document.addEventListener('pointerdown',e=>{if(topics.length<2||!e.target.closest('.d3-map-window')||!['touch','pen'].includes(e.pointerType)){pointer=null;return}pointer={x:e.clientX,y:e.clientY,id:e.pointerId};},{passive:true});
  document.addEventListener('pointerup',e=>{if(!pointer||pointer.id!==e.pointerId)return;const dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;pointer=null;if(Math.abs(dx)>=55&&Math.abs(dx)>Math.abs(dy)*1.5){suppressClickUntil=Date.now()+450;selectSlide(slide+(dx<0?1:-1));}},{passive:true});
  document.addEventListener('pointercancel',()=>{pointer=null;},{passive:true});
  window.DistrictSlides={overview,findByKey,has:key=>!!findByKey(key),brief(id,lang){const d=find(id);return d?`<p>${esc(d.summary[lang])}</p><a href="#district=${esc(d.id)}">${lang==='ru'?'Подробнее о районе':'More about the district'} →</a>`:'';}};

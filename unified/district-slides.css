@@ -147,3 +147,49 @@
   .d3-info--place .d3-place-description { font-size: 14px; }
   .d3-place-route { padding: 11px 0 0; border: 0; border-top: 1px solid var(--line); }
 }
+
+.d3-overview--summary .d3-summary-intro { margin: 0 0 18px; max-width: 71ch; color: var(--muted); }
+.d3-overview--summary .d3-map-window.d3-places-map { height: clamp(192px,37vw,350px); aspect-ratio: auto; background: #dce3d0; }
+.d3-overview--summary .d3-places-plane { inset: 0; height: 100%; aspect-ratio: auto; transform: none; }
+.d3-overview--summary .d3-places-image { object-fit: fill; }
+.d3-overview--summary .d3-visualization.d3-place-visualization { top: 8px; right: 8px; left: auto; }
+.d3-overview--summary .d3-map-window.d3-places-map--missing { height: auto; }
+.d3-overview--summary .d3-place-context--district {
+  display: block; transform: translateY(-50%); border: 1px solid var(--line); border-radius: 5px;
+  padding: 2px 5px; background: #fffefaed; color: var(--ink); font-size: 11px;
+}
+.d3-overview--summary .d3-place-context--district span { display: inline; }
+.d3-overview--summary .d3-place-context--district:last-of-type { transform: translate(-100%,-50%); }
+.d3-overview--summary .d3-place-pin .d3-pin-label { display: none; }
+.d3-overview--summary .d3-place-pin i { width: 100%; height: 100%; color: inherit; background: transparent; font-size: 13px; }
+.d3-overview--summary .d3-pin.d3-place-pin {
+  border: 2px solid #fffefa; border-radius: 50%; background: #fffefa; color: var(--ink); box-shadow: 0 2px 7px #24372955;
+}
+.d3-overview--summary .d3-pin.d3-place-pin.is-selected {
+  background: var(--ink); color: #fffefa; box-shadow: 0 0 0 4px #526d54b0,0 2px 7px #24372955;
+}
+.d3-overview--summary .d3-info.d3-info--place { display: block; }
+.d3-summary-meta { display: flex; justify-content: space-between; align-items: start; gap: 8px; }
+.d3-summary-meta > span { flex: none; padding: 3px 8px; border-radius: 12px; background: #e9ede4; font-size: 12px; font-weight: 650; }
+.d3-overview--summary .d3-place-facts {
+  grid-template-columns: repeat(auto-fit,minmax(min(100%,164px),1fr)); border: 0; padding: 0;
+}
+.d3-overview--summary .d3-place-facts > div { padding: 8px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--white); }
+.d3-overview--summary .d3-place-facts dd { font-size: 16px; font-variant-numeric: tabular-nums; }
+.d3-overview--summary .d3-place-facts dd small { font-size: .83em; }
+.d3-summary-details { margin-top: 10px; border-top: 1px solid var(--line); }
+.d3-summary-details summary { min-height: 44px; padding: 10px 0; cursor: pointer; font-weight: 650; }
+.d3-summary-details dl { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,235px),1fr)); gap: 10px; margin: 0 0 10px; }
+.d3-summary-details dt,.d3-market-note { color: var(--muted); font-size: 13px; }
+.d3-summary-details dd { margin: 0; font-size: 14px; }
+.d3-summary-link { display: inline-flex; align-items: center; min-height: 44px; color: var(--ink); font-size: 14px; font-weight: 650; text-decoration: underline; text-underline-offset: 3px; }
+.d3-market-summary { margin-top: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
+.d3-market-summary h2 { margin: 2px 0 10px; font-size: clamp(20px,2.4vw,27px); }
+.d3-market-note { margin: 8px 0 0; }
+.d3-summary-actions { display: flex; flex-wrap: wrap; justify-content: end; align-items: center; gap: 4px 12px; margin-top: 12px; }
+@media(max-width: 600px) {
+  .d3-overview--summary .d3-place-list { grid-template-columns: 1fr; }
+  .d3-overview--summary .d3-place-option { gap: 8px; padding: 4px 9px; }
+  .d3-overview--summary .d3-place-option strong { font-size: 14px; }
+  .d3-market-summary { padding: 12px; }
+}

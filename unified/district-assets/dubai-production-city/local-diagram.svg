@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="380" viewBox="0 0 960 380" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="base" x2="1" y2="1"><stop stop-color="#e8eadb"/><stop offset="1" stop-color="#cdd6bf"/></linearGradient>
+            <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M0 40V0h40" fill="none" stroke="#60765d" opacity=".15"/></pattern>
+            <g id="block">
+              <path d="m0 28 36-17 32 15-36 17z" fill="#354c36" opacity=".16" transform="translate(4 14)"/>
+              <path d="m0 12 32 15v15L0 27z" fill="#b3ae93"/>
+              <path d="m32 27 36-17v15L32 42z" fill="#959d82"/>
+              <path d="m0 12 36-17L68 10 32 27z" fill="#fffdf0"/>
+              <path d="m7 13 28-13 24 11-28 13z" fill="#e4e0c8"/>
+            </g>
+            <g id="tree"><ellipse cy="6" rx="7" ry="3" fill="#4b6545" opacity=".22"/><path d="M0 8V-1" stroke="#786550" stroke-width="2"/><circle cy="-2" r="6" fill="#74946c"/></g>
+          </defs>
+          <path fill="url(#base)" d="M0 0h960v380H0z"/>
+          <path fill="url(#grid)" d="M0 0h960v380H0z"/>
+          <path d="M34 80 215 29l205 72-164 66z" fill="#dce3d0" stroke="#f4f3e7" stroke-width="4"/>
+          <path d="m119 210 185-58 230 79-188 90z" fill="#e5e4d3" stroke="#f6f3e7" stroke-width="4"/>
+          <path d="m580 190 188-64 159 72-148 125z" fill="#b7c6a8" stroke="#edf1e2" stroke-width="4"/>
+          <path d="m460 65 179-37 163 54-167 46z" fill="#dce3d0" stroke="#f4f3e7" stroke-width="4"/>
+          <path d="m-16 258 242-82 99-45 174 62 153-58 329 123M452-12 385 96 530 158l-8 80 211 156" fill="none" stroke="#a2aa92" stroke-width="17"/>
+          <path d="m-16 258 242-82 99-45 174 62 153-58 329 123M452-12 385 96 530 158l-8 80 211 156" fill="none" stroke="#f5f2e4" stroke-width="12"/>
+          <path d="m-16 258 242-82 99-45 174 62 153-58 329 123M452-12 385 96 530 158l-8 80 211 156" fill="none" stroke="#c6c1aa" stroke-dasharray="6 9"/>
+          <use href="#block" x="148" y="75"/><use href="#block" x="255" y="108" transform="translate(-57 -25) scale(1.28)"/>
+          <use href="#block" x="286" y="76"/><use href="#block" x="120" y="252"/><use href="#block" x="219" y="239"/>
+          <use href="#block" transform="translate(302 221) scale(1.55)"/><use href="#block" x="370" y="287"/>
+          <use href="#block" x="582" y="48"/><use href="#block" x="678" y="58"/><use href="#block" x="751" y="93"/>
+          <use href="#block" x="824" y="178"/><use href="#block" x="854" y="285"/>
+          <path d="m656 240 88-29 69 27-88 35z" fill="#90a985" stroke="#f0f1dc" stroke-width="2"/>
+          <path d="m678 243 65-22 48 19-67 25z" fill="#6f916e" stroke="#ebf1df" stroke-width="1.5"/>
+          <path d="m723 245 17-6 13 5-18 7z" fill="#d0c6a2"/>
+          <use href="#tree" x="81" y="104"/><use href="#tree" x="101" y="111"/><use href="#tree" x="192" y="158"/><use href="#tree" x="456" y="266"/><use href="#tree" x="474" y="273"/><use href="#tree" x="648" y="250"/><use href="#tree" x="665" y="266"/><use href="#tree" x="798" y="258"/><use href="#tree" x="816" y="273"/><use href="#tree" x="639" y="109"/>
+        </svg>
