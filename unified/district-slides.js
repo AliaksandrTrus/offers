@@ -220,6 +220,10 @@ function buttons(values,attr,selected){
   return values.map(([id,text])=>'<button type="button" class="d3-control d3-topic" data-'+attr+'="'+id+'" aria-pressed="'+(id===selected)+'">'+safe(text)+'</button>').join('');
 }
 const iconPaths = {
+ 'beach':'<path d="M3 12a9 9 0 0 1 18 0H3zm9-9v17a2 2 0 0 0 4 0M7 12c0-4 2-8 5-9 3 1 5 5 5 9"/>',
+ 'airport':'<path d="m3 10 7 2V4a2 2 0 0 1 4 0v8l7-2v3l-7 3v4l3 1v1l-5-1-5 1v-1l3-1v-4-0l-7-3z"/>',
+ 'port':'<path d="M12 4v14M6 9H3c0 7 3 11 9 12 6-1 9-5 9-12h-3M7 15l5 6 5-6M7 7h10"/><circle cx="12" cy="4" r="2"/>',
+ 'park':'<path d="m12 3-7 9h4l-5 6h7v4m1-19 7 9h-4l5 6h-8"/>',
  'area':'<path d="M4 19V9h6v10M10 5h10v14M2 19h20M13 9h4m-4 4h4"/>',
  'media':'<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
  'road':'<path d="m8 3-4 18m12-18 4 18M12 3v4m0 3v4m0 3v4"/>',
@@ -273,7 +277,7 @@ function mapMarkup(scene){
     ?T('Карта недоступна. Выберите объект из списка.','The map is unavailable. Choose a landmark from the list.')
     :T('3D-визуализация недоступна.','The 3D view is unavailable.'))+'</p></div>'+
    '<figcaption class="d3-place-caption"><span>'+T('Здания обобщены','Buildings generalized')+'</span>'+
-   ((generic||scene.frame==='wide')?'<span class="d3-map-credit">© OpenStreetMap · ODbL 1.0 · openstreetmap.org/copyright</span>':'')+
+   (scene.credit?'<span class="d3-map-credit">'+safe(label(scene.credit))+'</span>':((generic||scene.frame==='wide')?'<span class="d3-map-credit">© OpenStreetMap · ODbL 1.0 · openstreetmap.org/copyright</span>':''))+
    '</figcaption></figure>';
 }
 function spreadPins(map){
@@ -439,10 +443,11 @@ function dataRouteList(){
  return '<details class="driving-routes"><summary class="d3-control d3-disclosure"><span><span id="routes-title" class="driving-title">'+safe(label(config.origin.title))+'</span><small>'+fmt(config.routes.length)+' '+T('направлений · время при проверке и расстояние','destinations · observed time and distance')+'</small></span></summary><table aria-labelledby="routes-title"><thead><tr><th>'+T('Направление','Destination')+'</th><th>'+T('Время','Time')+'</th><th>'+T('Км','Km')+'</th></tr></thead><tbody>'+rows+'</tbody></table><p class="muted">'+safe(label(config.origin.note))+'</p></details>';
 }
 function dataMarketPanel(){
+ const saleAmount=row=>(row.saleApproximate?'≈ ':'')+amount(row.sale);
  const sale=marketMode==='sale',missing=T('—','—'),market=config.market;
  const columns=sale?[T('Медиана','Median'),T('За площадь','Per area'),T('Продаж','Sales')]:[T('Аренда / год','Rent / year'),T('Договоров','Contracts'),T('Валовая','Gross')];
- const stats=sale?[[fmt(marketRows.reduce((s,r)=>s+r.sales,0)),T('Продажи в четырёх типах квартир','Sales in the four apartment types')],[amount(marketRows[1].sale),T('Медиана продажи 1BR','1BR median sale')]]:[[amount(marketRows[1].rent),T('Годовая аренда 1BR','1BR annual rent')],[fmt(marketRows[1].grossYield,2)+'%',T('Валовой ориентир готовых 1BR','Ready 1BR gross benchmark')]];
- const rows=marketRows.map(r=>'<tr><th scope="row">'+safe(label(r.label))+'</th>'+(sale?[amount(r.sale),unitRate(r.rate),fmt(r.sales)]:[r.rent?amount(r.rent):missing,r.rentContracts?fmt(r.rentContracts):missing,Number.isFinite(r.grossYield)?fmt(r.grossYield,2)+'%':missing]).map(x=>'<td>'+safe(x)+'</td>').join('')+'</tr>').join('');
+ const stats=sale?[[fmt(marketRows.reduce((s,r)=>s+r.sales,0)),T('Продажи в четырёх типах квартир','Sales in the four apartment types')],[saleAmount(marketRows[1]),T('Медиана продажи 1BR','1BR median sale')]]:[[Number.isFinite(marketRows[1].rent)?amount(marketRows[1].rent):missing,T('Годовая аренда 1BR','1BR annual rent')],[Number.isFinite(marketRows[1].grossYield)?fmt(marketRows[1].grossYield,2)+'%':missing,T('Валовой ориентир готовых 1BR','Ready 1BR gross benchmark')]];
+ const rows=marketRows.map(r=>'<tr><th scope="row">'+safe(label(r.label))+'</th>'+(sale?[saleAmount(r),unitRate(r.rate),fmt(r.sales)]:[r.rent?amount(r.rent):missing,r.rentContracts?fmt(r.rentContracts):missing,Number.isFinite(r.grossYield)?fmt(r.grossYield,2)+'%':missing]).map(x=>'<td>'+safe(x)+'</td>').join('')+'</tr>').join('');
  return '<section class="market-box d3-info d3-info--flow" aria-labelledby="market-heading"><div class="d3-card-head"><div><p class="d3-kicker">'+safe(label(market.period))+'</p><h3 id="market-heading">'+T('Квартиры по числу спален','Apartments by bedroom count')+'</h3></div></div><div class="scene-options market-options" role="group" aria-label="'+T('Рыночные показатели','Market figures')+'">'+buttons([['sale',T('Продажи','Sales')],['rent',T('Аренда','Rent')]],'market',marketMode)+'</div>'+factCards(stats)+'<table><thead><tr><th>'+T('Тип','Type')+'</th>'+columns.map(c=>'<th>'+safe(c)+'</th>').join('')+'</tr></thead><tbody>'+rows+'</tbody></table><p class="muted">'+safe(label(sale?market.saleNote:market.rentNote))+'</p></section>';
 }
 function dataThemeMarkup(){
@@ -480,8 +485,8 @@ function dataThemeMarkup(){
    '<div id="themes" class="d3-topics d3-topics--places" role="tablist" aria-label="'+T('Темы обзора','Overview topics')+'">'+tabs()+'</div>'+
    '<section id="theme-panel" class="panel" role="tabpanel" aria-labelledby="tab-'+activeTheme.id+'" tabindex="0">'+themeMarkup()+'</section>'+
    '<p class="scene-intro muted">'+safe(label(district.summary))+'</p>'+
-   '<div class="scene-actions d3-summary-actions">'+overviewLink+'<button class="d3-control d3-control--primary" type="button" data-scenes-projects>'+
-   (settings.embedded?T('К квартирам','Apartments'):T('К проектам','Projects'))+' →</button></div>'+
+   (settings.hideProjects?'':'<div class="scene-actions d3-summary-actions">'+overviewLink+'<button class="d3-control d3-control--primary" type="button" data-scenes-projects>'+
+   (settings.embedded?T('К квартирам','Apartments'):T('К проектам','Projects'))+' →</button></div>')+
    '<p class="scene-announcement" role="status"></p></section>';
  }
  function hint(){
