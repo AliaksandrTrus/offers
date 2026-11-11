@@ -10,13 +10,13 @@
  const root=()=>document.querySelector('.d3-overview');
  const findByKey=key=>districts.find(d=>d.districtKey===key),find=id=>districts.find(d=>d.id===id);
  function name(id){return tx(c[id].label);}
- function topicTabs(){return topics.map((t,i)=>`<button type="button" class="d3-topic" role="tab" data-d3-scene="${i}" id="d3-topic-${i}" aria-selected="${i===slide}" aria-controls="d3-stage" tabindex="${i===slide?'0':'-1'}"><i>0${i+1}</i>${tx(t)}</button>`).join('');}
+ function topicTabs(){return topics.map((t,i)=>`<button type="button" class="d3-control d3-topic" role="tab" data-d3-scene="${i}" id="d3-topic-${i}" aria-selected="${i===slide}" aria-controls="d3-stage" tabindex="${i===slide?'0':'-1'}"><i>0${i+1}</i>${tx(t)}</button>`).join('');}
  function pin(id,num,x,y,extra='',layout='',mx=x,my=y){return `<button type="button" class="d3-pin d3-pin--${layout}${choice[slide]===id?' is-selected':''}" data-d3-object="${id}" style="--x:${x}%;--y:${y}%;--pin-mobile-x:${mx}%;--pin-mobile-y:${my}%" aria-label="${esc(name(id))}" aria-pressed="${choice[slide]===id}" aria-controls="d3-card"><i>${num}</i><span class="d3-pin-label">${esc(name(id))}${extra?`<em>${esc(extra)}</em>`:''}</span></button>`;}
  function overlay(content){return `<svg class="d3-overlay" viewBox="0 0 ${topics[slide].width} ${topics[slide].height}" aria-hidden="true"><defs><radialGradient id="d3-halo"><stop stop-color="#b8ceac" stop-opacity=".6"/><stop offset="1" stop-color="#b8ceac" stop-opacity="0"/></radialGradient></defs>${content}</svg>`;}
  function districtLabel(x,y,mx=x,my=y){return `<span class="d3-district-label" style="left:${x}%;top:${y}%;--district-mobile-x:${mx}%;--district-mobile-y:${my}%">${esc(active.name)}</span>`;}
  function terrain(){
   const s=topics[slide],pos=s.districtLabel;let marks='';
-  if(s.layout==='area'){const p=s.optionPosition;marks=`<div class="d3-area-options" style="left:${p.x}%;top:${p.y}%;--options-mobile-x:${p.mobileX}%;--options-mobile-y:${p.mobileY}%">${s.objects.map((id,i)=>`<button type="button" class="d3-area-option ${choice[slide]===id?'is-selected':''}" data-d3-object="${esc(id)}" aria-pressed="${choice[slide]===id}" aria-controls="d3-card"><i>${i+1}</i>${esc(name(id))}</button>`).join('')}</div>`;}
+  if(s.layout==='area'){const p=s.optionPosition;marks=`<div class="d3-area-options" style="left:${p.x}%;top:${p.y}%;--options-mobile-x:${p.mobileX}%;--options-mobile-y:${p.mobileY}%">${s.objects.map((id,i)=>`<button type="button" class="d3-control d3-area-option ${choice[slide]===id?'is-selected':''}" data-d3-object="${esc(id)}" aria-pressed="${choice[slide]===id}" aria-controls="d3-card"><i>${i+1}</i>${esc(name(id))}</button>`).join('')}</div>`;}
   else marks=s.pins.map((p,i)=>pin(p.id,i+1,p.x,p.y,tx(p.extra),p.layout,p.mobileX??p.x,p.mobileY??p.y)).join('');
   const h=s.halo;const shape=overlay(`<ellipse cx="${h.cx}" cy="${h.cy}" rx="${h.rx}" ry="${h.ry}" fill="url(#d3-halo)"/>${s.path?`<path d="${esc(s.path)}" fill="none" stroke="#fffdf5" stroke-width="12"/><path d="${esc(s.path)}" fill="none" stroke="#aa4539" stroke-width="6"/>`:''}`);
   return `<div class="d3-map-window"><div class="d3-plane"><img src="${esc(new URL(s.image,presentation.assetsBase||document.baseURI).href)}" width="${s.width}" height="${s.height}" alt="${L('Авторская 3D-визуализация окружения ','Original 3D illustration of the surroundings of ')+esc(active.name)}">${shape}${districtLabel(pos.x,pos.y,pos.mobileX,pos.mobileY)}<div class="d3-markers" role="group" aria-label="${L('Объекты на изображении','Objects in the image')}">${marks}</div></div><span class="d3-visualization">${L('3D-визуализация','3D visualization')}</span></div>`;
@@ -51,7 +51,7 @@
     <span class="d3-pin-label d3-place-pin-short">${esc(tx(c[pin.id].shortLabel))}</span>
    </button>`).join('');
   const options = scene.objects.map((id,index) => `
-   <button type="button" class="d3-place-option${selected(id)?' is-selected':''}" data-d3-object="${esc(id)}"
+   <button type="button" class="d3-control d3-choice d3-place-option${selected(id)?' is-selected':''}" data-d3-object="${esc(id)}"
     aria-label="${esc(tx(c[id].category))} · ${esc(tx(c[id].cardTitle))}" aria-pressed="${selected(id)}" aria-controls="d3-card">
     <i>${placeNumber(index)}</i>${scene.numbered ? `<strong>${esc(name(id))}</strong>` : `<span><strong>${esc(tx(c[id].category))}</strong><small>${esc(name(id))}</small></span>`}
    </button>`).join('');
@@ -68,20 +68,15 @@
      <p class="d3-place-unavailable" hidden>${L('Карта недоступна. Выберите объект в списке ниже.','The map is unavailable. Choose a place in the list below.')}</p>
     </div>
     <div class="d3-place-caption"><span>${scene.numbered ? esc(tx(scene.instructions)) : L('Условные очертания застройки','Illustrative building outlines')}</span>
-     ${scene.numbered ? '' : '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>'}
+     ${scene.numbered ? '' : '<span class="d3-map-credit">© OpenStreetMap · ODbL 1.0 · openstreetmap.org/copyright</span>'}
     </div>
    </div>
    <div class="d3-place-list" role="group" aria-label="${L('Места рядом','Nearby places')}">${options}</div>`;
  }
 
  function placeCard(place) {
-  if (topics[slide].numbered) return summaryPlaceCard(place, topics[slide]);
+  if (topics[slide].numbered) return summaryPlaceCard(place);
   const origin = topics[slide].origin;
-  const route = new URL('https://www.google.com/maps/dir/');
-  route.searchParams.set('api','1');
-  route.searchParams.set('origin',origin.geo.join(','));
-  route.searchParams.set('destination',place.geo.join(','));
-  if(place.travelMode) route.searchParams.set('travelmode',place.travelMode);
   const facts = place.facts.map(({label,value}) => `<div><dt>${esc(tx(label))}</dt><dd>${esc(tx(value))}</dd></div>`).join('');
   return `<div>
    <div class="d3-place-card-head">
@@ -90,18 +85,12 @@
    </div>
    <p class="d3-place-description">${esc(tx(place.description))}</p><dl class="d3-place-facts">${facts}</dl>
    </div><div class="d3-place-route">
-    <p class="d3-place-route-title">${L('Как добраться','Getting there')}</p>
+    <p class="d3-place-route-title">${L('Доступность','Access')}</p>
     <p>${esc(tx(origin.name))}</p><p>${esc(tx(place.access))}</p>
-    <a class="d3-place-route-link" href="${esc(route.href)}" target="_blank" rel="noopener noreferrer">${L('Маршрут в Google Maps','Directions in Google Maps')} <span aria-hidden="true">↗</span></a>
    </div>`;
  }
 
- function summaryPlaceCard(place, scene) {
-  const atOrigin = place.mapQuery === scene.originQuery;
-  const route = new URL(atOrigin ? 'https://www.google.com/maps/search/' : 'https://www.google.com/maps/dir/');
-  route.search = new URLSearchParams(atOrigin
-   ? {api:'1', query:place.mapQuery}
-   : {api:'1', origin:scene.originQuery, destination:place.mapQuery, travelmode:'driving'}).toString();
+ function summaryPlaceCard(place) {
   const facts = place.facts.map(({label,value}) => `<div><dt>${esc(tx(label))}</dt><dd>${esc(tx(value))}</dd></div>`).join('');
   const details = [
    [L('Для жителя','For residents'),place.details.life],
@@ -112,8 +101,7 @@
   return `<div class="d3-summary-meta"><p class="d3-place-meta">${esc(tx(place.category))} · ${esc(tx(place.area))}</p>
    <span>${L('Работает','Open')}</span></div><h3 id="d3-card-title">${esc(tx(place.cardTitle))}</h3>
    <p class="d3-place-description">${esc(tx(place.description))}</p><dl class="d3-place-facts">${facts}</dl>
-   <details class="d3-summary-details"><summary>${L('Что учесть покупателю','What buyers should know')}</summary><dl>${details}</dl></details>
-   <a class="d3-summary-link" href="${esc(route.href)}" target="_blank" rel="noopener noreferrer">${atOrigin?L('Открыть на карте','Open map'):L('Маршрут от ','Directions from ')+esc(tx(scene.origin.name))}</a>`;
+   <details class="d3-summary-details"><summary class="d3-control d3-disclosure">${L('Что учесть покупателю','What buyers should know')}</summary><dl>${details}</dl></details>`;
  }
 
  function marketSummary(market) {
@@ -145,7 +133,7 @@
   const access = scene.numbered ? 'aria-labelledby="d3-place-heading"' : `role="tabpanel" aria-labelledby="d3-topic-${slide}"`;
   return `<section class="d3-stage d3-${scene.id}${places?' d3-stage--places':''}" id="d3-stage" ${access} tabindex="0">${places?placesTerrain(scene):terrain()}<article id="d3-card" class="d3-info d3-info--${c[id].kind}${c[id].compactPeriod?' d3-info--compact-period':''}" data-card="${id}" aria-live="polite" aria-atomic="true">${card(id)}</article></section>`;
  }
- function controls(){return `<div class="d3-controls"><button type="button" class="button d3-arrow" data-d3-step="-1" ${slide===0?'disabled':''}>← ${L('Назад','Back')}</button><div class="d3-progress"><strong>${String(slide+1).padStart(2,'0')}</strong><span>/ ${String(topics.length).padStart(2,'0')}</span><div aria-hidden="true">${topics.map((_,i)=>`<i class="${i===slide?'is-current':''}"></i>`).join('')}</div></div><button type="button" class="button primary d3-arrow" ${slide===topics.length-1?'data-d3-projects':'data-d3-step="1"'}>${slide===topics.length-1?(presentation.embedded?L('К квартирам','Apartments'):L('К проектам','Projects')):L('Далее','Next')} →</button></div>`;}
+ function controls(){return `<div class="d3-controls"><button type="button" class="d3-control d3-arrow" data-d3-step="-1" ${slide===0?'disabled':''}>← ${L('Назад','Back')}</button><div class="d3-progress"><strong>${String(slide+1).padStart(2,'0')}</strong><span>/ ${String(topics.length).padStart(2,'0')}</span><div aria-hidden="true">${topics.map((_,i)=>`<i class="${i===slide?'is-current':''}"></i>`).join('')}</div></div><button type="button" class="d3-control d3-control--primary d3-arrow" ${slide===topics.length-1?'data-d3-projects':'data-d3-step="1"'}>${slide===topics.length-1?(presentation.embedded?L('К квартирам','Apartments'):L('К проектам','Projects')):L('Далее','Next')} →</button></div>`;}
  function overview(key,lang,code,settings={}){
   presentation=settings;active=findByKey(key);if(!active)return '';
   if(active.sceneOverview&&window.DistrictScenes)return window.DistrictScenes.overview(active,lang,code,settings);
@@ -160,8 +148,8 @@
    return `<section class="d3-overview d3-overview--summary${settings.embedded?' d3-overview--embedded':''}" aria-labelledby="district-title">
     <div class="d3-heading"><div><p class="eyebrow">${L('Обзор района','District overview')}</p><${settings.embedded?'h2':'h1'} id="district-title">${esc(active.name)}</${settings.embedded?'h2':'h1'}></div></div>
     <p class="d3-summary-intro">${esc(tx(active.summary))}</p><div id="d3-stage-wrap">${stage()}</div>${marketSummary(data.marketSummary)}
-    <div class="d3-summary-actions">${settings.embedded?`<a class="d3-summary-link" href="${esc(districtUrl.href)}">${L('Открыть обзор района','Open district overview')}</a>`:''}
-    <button type="button" class="button primary" data-d3-projects>${settings.embedded?L('К квартирам','Apartments'):L('К проектам','Projects')} →</button></div></section>`;
+    <div class="d3-summary-actions">${settings.embedded?`<a class="d3-control" href="${esc(districtUrl.href)}">${L('Открыть обзор района','Open district overview')}</a>`:''}
+    <button type="button" class="d3-control d3-control--primary" data-d3-projects>${settings.embedded?L('К квартирам','Apartments'):L('К проектам','Projects')} →</button></div></section>`;
   }
   return `<section class="d3-overview${settings.embedded?' d3-overview--embedded':''}" aria-labelledby="district-title"><div class="d3-heading"><div><p class="eyebrow">${L('Обзор района','District overview')}</p><${settings.embedded?'h2':'h1'} id="district-title">${esc(active.name)}</${settings.embedded?'h2':'h1'}></div><p class="d3-hint">${places?L('Выберите метку на карте','Choose a marker on the map'):L('Наведите на метку или нажмите её','Hover over a marker or tap it')}</p></div><div class="d3-topics${places?' d3-topics--places':''}" role="tablist" aria-label="${L('Темы обзора','Overview topics')}">${topicTabs()}</div><div id="d3-stage-wrap">${stage()}</div><div id="d3-controls-wrap">${controls()}</div></section>`;
  }
@@ -189,9 +177,8 @@
  const states = new Map();
 
  function createController(district){
- const {themes,districtPoints,marketRows,satellite,terrainImage,origin,images,routesV04,group,nearGroups,universityIds,wideImage}=district.sceneOverview;
+ const {themes,districtPoints,marketRows,terrainImage,images,routesV04,group,nearGroups,universityIds,wideImage}=district.sceneOverview;
  let settings={};
- const directions = destination => 'https://www.google.com/maps/dir/?' + new URLSearchParams({api:'1',origin,destination,travelmode:'driving'});
  const safe = value => String(value ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let lang = 'ru';
 let currencyCode = 'AED';
@@ -226,11 +213,8 @@ function cropPoint([x,y],[left,top,right,bottom]){
 function activePlace(scene){
   return selections.get(chosenThemeKey()) ?? scene.ids[0];
 }
-function link(url,text,klass='text-link'){
-  return '<a class="'+klass+'" href="'+safe(url)+'" target="_blank" rel="noopener noreferrer">'+safe(text)+' <span aria-hidden="true">↗︎</span></a>';
-}
 function buttons(values,attr,selected){
-  return values.map(([id,text])=>'<button type="button" class="d3-topic" data-'+attr+'="'+id+'" aria-pressed="'+(id===selected)+'">'+safe(text)+'</button>').join('');
+  return values.map(([id,text])=>'<button type="button" class="d3-control d3-topic" data-'+attr+'="'+id+'" aria-pressed="'+(id===selected)+'">'+safe(text)+'</button>').join('');
 }
 const iconPaths = {
  'area':'<path d="M4 19V9h6v10M10 5h10v14M2 19h20M13 9h4m-4 4h4"/>',
@@ -285,9 +269,9 @@ function mapMarkup(scene){
    '<p class="map-fallback" hidden>'+(points.length
     ?T('Карта недоступна. Выберите объект из списка.','The map is unavailable. Choose a landmark from the list.')
     :T('3D-визуализация недоступна.','The 3D view is unavailable.'))+'</p></div>'+
-   '<figcaption class="d3-place-caption"><span>'+T('Здания обобщены','Buildings generalized')+'</span><div>'+
-   (scene.frame==='wide'?link('https://www.openstreetmap.org/copyright','© OpenStreetMap','map-credit'):'')+
-   link(satellite[scene.frame],T('Открыть карту','Open map'),'map-link')+'</div></figcaption></figure>';
+   '<figcaption class="d3-place-caption"><span>'+T('Здания обобщены','Buildings generalized')+'</span>'+
+   (scene.frame==='wide'?'<span class="d3-map-credit">© OpenStreetMap · ODbL 1.0 · openstreetmap.org/copyright</span>':'')+
+   '</figcaption></figure>';
 }
 function spreadPins(map){
  const w=map.clientWidth,h=map.clientHeight;
@@ -352,8 +336,8 @@ function positionLabels(map,pins,centers,badges,width,height){
  }
 }
 function placeIndex(ids,title,selected,kind,note=''){
-  const items=ids.map(id=>'<button type="button" data-place="'+id+'" aria-controls="detail-card" aria-pressed="'+(selected===id)+'">'+pinIcon(id)+'<strong>'+safe(districtPoints[id].name)+'</strong></button>');
-  return '<details class="place-index '+kind+'"><summary>'+safe(title)+'</summary>'+
+  const items=ids.map(id=>'<button type="button" class="d3-control d3-choice" data-place="'+id+'" aria-controls="detail-card" aria-pressed="'+(selected===id)+'">'+pinIcon(id)+'<span>'+safe(districtPoints[id].name)+'</span></button>');
+  return '<details class="place-index '+kind+'"><summary class="d3-control d3-disclosure">'+safe(title)+'</summary>'+
    (note?'<p class="muted">'+safe(note)+'</p>':'')+
    '<div class="places" role="group" aria-label="'+safe(title)+'">'+items.join('')+'</div></details>';
 }
@@ -373,28 +357,27 @@ function cardMarkup(){
    (place.status?'<span class="place-status'+(place.future?' place-status--future':'')+'">'+safe(label(place.status))+'</span>':'')+'</p>'+
    '<h3 id="card-title">'+safe(place.name)+'</h3></div></div>'+(headlineFacts?facts:'')+
    '<p class="card-summary d3-meaning">'+safe(label(place.description))+'</p></div>'+
-   (headlineFacts?'':facts)+(details?'<details><summary>'+T('Что учесть покупателю','What buyers should know')+'</summary><dl class="detail-grid">'+details+'</dl></details>':'')+
-   (place.link?'<div class="card-links">'+link(place.link,label(place.linkLabel) || T('Открыть на карте','Show on map'))+'</div>':'');
+   (headlineFacts?'':facts)+(details?'<details><summary class="d3-control d3-disclosure">'+T('Что учесть покупателю','What buyers should know')+'</summary><dl class="detail-grid">'+details+'</dl></details>':'');
 }
 function routeList(){
   const info = {
    toll:T('Платный участок','Toll section'),
    airport:T('Точка аэропорта; конкретная дверь высадки не подтверждена.','Airport pin; the exact drop-off door is unconfirmed.')
   };
-  const rows=routesV04.map(([name,min,km,to,via,note])=>{
+  const rows=routesV04.map(([name,min,km,,via,note])=>{
    const qualifier=[via,info[note]].filter(Boolean).join(' · ');
-   return '<tr><th scope="row">'+link(directions(to),name,'route-link')+
+   return '<tr><th scope="row">'+safe(name)+
     (qualifier?'<small>'+safe(qualifier)+'</small>':'')+'</th>'+
     '<td><strong>'+fmt(min)+' '+T('мин','min')+'</strong></td>'+
     '<td>'+fmt(km,km%1?1:0)+' '+T('км','km')+'</td></tr>';
   });
-  return '<details class="driving-routes"><summary><span><strong id="routes-title">'+T('На автомобиле от City Centre Me’aisem','Driving from City Centre Me’aisem')+
-   '</strong><small>'+fmt(routesV04.length)+' '+T('маршрутов · время и расстояние','routes · time and distance')+'</small></span></summary>'+
+  return '<details class="driving-routes"><summary class="d3-control d3-disclosure"><span><span id="routes-title" class="driving-title">'+T('На автомобиле от City Centre Me’aisem','Driving from City Centre Me’aisem')+
+   '</span><small>'+fmt(routesV04.length)+' '+T('маршрутов · время и расстояние','routes · time and distance')+'</small></span></summary>'+
    '<table aria-labelledby="routes-title"><thead><tr><th scope="col">'+T('Направление','Destination')+'</th><th scope="col">'+T('Время','Time')+
    '</th><th scope="col">'+T('Расстояние','Distance')+'</th></tr></thead><tbody>'+rows.join('')+'</tbody></table>'+
    '<p class="muted">'+
    T('10.11.2026, около 13:25. Время в пути зависит от трафика.','10 Nov 2026, around 13:25. Travel times vary with traffic.')+
-   '</p>'+link(satellite.city,T('Положение района в Дубае','Location within Dubai'))+'</details>';
+   '</p></details>';
 }
 function economyPanel(){
  return '<section class="routes economy"><h3>'+T('Что работает в свободной зоне','How the free zone works')+'</h3>'+
@@ -435,7 +418,7 @@ function themeMarkup(){
    const selected=activePlace(scene);
    if(isEducation()){
     more+=placeIndex(universityIds,T('Университеты рядом','Nearby universities'),selected,'campus-index',
-     T('Кампусы Dubai Knowledge Park за пределами 3D-кадра. Маршруты доступны в карточках.','The Dubai Knowledge Park campuses are outside this 3D view. Open a card for directions.'));
+     T('Кампусы Dubai Knowledge Park за пределами 3D-кадра. Расстояния указаны в карточках.','The Dubai Knowledge Park campuses are outside this 3D view. Distances are shown in the cards.'));
    }
    more+=placeIndex(scene.ids,T('Список точек карты','List of map landmarks'),selected,'map-place-index');
   }
@@ -454,7 +437,7 @@ function themeMarkup(){
  function tabs(){
   return themes.map(theme=>{
    const active=theme.id===activeTheme.id;
-   return '<button type="button" class="d3-topic" id="tab-'+theme.id+'" role="tab" data-theme="'+theme.id+'" aria-controls="theme-panel" aria-selected="'+active+'" tabindex="'+(active?0:-1)+'">'+safe(label(theme.label))+'</button>';
+   return '<button type="button" class="d3-control d3-topic" id="tab-'+theme.id+'" role="tab" data-theme="'+theme.id+'" aria-controls="theme-panel" aria-selected="'+active+'" tabindex="'+(active?0:-1)+'">'+safe(label(theme.label))+'</button>';
   }).join('');
  }
  function render(nextLang,nextCurrency,nextSettings){
@@ -464,14 +447,14 @@ function themeMarkup(){
   queueMicrotask(()=>positionPins(document.querySelector('[data-scenes-for="'+district.id+'"]')));
   const heading=settings.embedded?'h2':'h1';
   const districtUrl=new URL('./#district='+district.id,settings.assetsBase||document.baseURI);
-  const overviewLink=settings.embedded?'<a class="text-link" href="'+safe(districtUrl.href)+'">'+T('Открыть обзор района','Open district overview')+'</a>':'';
+  const overviewLink=settings.embedded?'<a class="d3-control" href="'+safe(districtUrl.href)+'">'+T('Открыть обзор района','Open district overview')+'</a>':'';
   return '<section class="scene-overview'+(settings.embedded?' d3-overview--embedded':'')+'" data-scenes-for="'+safe(district.id)+'" aria-labelledby="district-title">'+
    '<header class="d3-heading"><div><p class="eyebrow">'+T('Обзор района','District overview')+'</p><'+heading+' id="district-title">'+safe(district.name)+'</'+heading+'></div>'+
    '<p id="scene-hint" class="d3-hint">'+hint()+'</p></header>'+
    '<div id="themes" class="d3-topics d3-topics--places" role="tablist" aria-label="'+T('Темы обзора','Overview topics')+'">'+tabs()+'</div>'+
    '<section id="theme-panel" class="panel" role="tabpanel" aria-labelledby="tab-'+activeTheme.id+'" tabindex="0">'+themeMarkup()+'</section>'+
    '<p class="scene-intro muted">'+safe(label(district.summary))+'</p>'+
-   '<div class="scene-actions d3-summary-actions">'+overviewLink+'<button class="button primary" type="button" data-scenes-projects>'+
+   '<div class="scene-actions d3-summary-actions">'+overviewLink+'<button class="d3-control d3-control--primary" type="button" data-scenes-projects>'+
    (settings.embedded?T('К квартирам','Apartments'):T('К проектам','Projects'))+' →</button></div>'+
    '<p class="scene-announcement" role="status"></p></section>';
  }
