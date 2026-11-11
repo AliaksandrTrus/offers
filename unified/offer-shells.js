@@ -570,7 +570,7 @@ window.OFFER_RENDERERS["coventry"]=function(document,window){
   const AED_PER_USD = 3.66;
   const asset = src => typeof src === "string" && src.startsWith("offers/coventry/images/") && /^[a-zA-Z0-9_./-]+$/.test(src) && !src.split("/").includes("..");
   const mapURL = value => {try {const url = new URL(value); return url.protocol === 'https:' && ['google.com','www.google.com','maps.google.com','maps.app.goo.gl'].includes(url.hostname) && url;} catch {return false;}};
-  // Пустая карта допустима только по прямому указанию Александра; принадлежность точки проверяется по источникам до сборки.
+  // Пустая карта допустима только по прямому указанию Aliaksandrа; принадлежность точки проверяется по источникам до сборки.
   const locationReady = data.map ? Boolean(mapURL(data.map.embedUrl) && mapURL(data.map.link)) : data.mapOmittedByRequest === true;
   // Принадлежность и точность выделения проверяются по исходным схемам до сборки.
   const floorSelectionReady = u => {const p=u.plans?.floor,s=p?.selection;return Boolean(p && asset(p.src) && s && s.unitId===u.id && ['source','svg'].includes(s.method) && (s.method!=='svg' || p.src.toLowerCase().endsWith('.svg')));};
@@ -839,7 +839,7 @@ window.OFFER_RENDERERS["greenfield-2"]=function(document,window){
   const AED_PER_USD = 3.66;
   const asset = src => typeof src === "string" && src.startsWith("offers/greenfield-2/images/") && /^[a-zA-Z0-9_./-]+$/.test(src) && !src.split("/").includes("..");
   const mapURL = value => {try {const url = new URL(value); return url.protocol === 'https:' && ['google.com','www.google.com','maps.google.com','maps.app.goo.gl'].includes(url.hostname) && url;} catch {return false;}};
-  // Пустая карта допустима только по прямому указанию Александра; принадлежность точки проверяется по источникам до сборки.
+  // Пустая карта допустима только по прямому указанию Aliaksandrа; принадлежность точки проверяется по источникам до сборки.
   const locationReady = data.map ? Boolean(mapURL(data.map.embedUrl) && mapURL(data.map.link)) : data.mapOmittedByRequest === true;
   // Принадлежность и точность выделения проверяются по исходным схемам до сборки.
   const floorSelectionReady = u => {const p=u.plans?.floor,s=p?.selection;return Boolean(p && asset(p.src) && s && s.unitId===u.id && ['source','svg'].includes(s.method) && (s.method!=='svg' || p.src.toLowerCase().endsWith('.svg')));};
