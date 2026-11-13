@@ -4,6 +4,7 @@
   const main=document.getElementById('main'),bar=document.getElementById('selection-bar');
   if(!snapshot?.offers?.length){main.textContent='Не удалось загрузить данные офферов. / Offer data could not be loaded.';return;}
   const offers=snapshot.offers,known=new Set(offers.map(o=>o.id));
+  const isOverview=o=>o?.data?.kind==='project_overview',comparable=new Set(offers.filter(o=>!isOverview(o)).map(o=>o.id));
   const KEY='personal-offers:unified:v1';
   let language='ru',currency='AED',district='',selected=new Set(),memoryOnly=false,invalidSaved=false;
   let projectId=offers[0].id,unitChoice={},pickerOpen=false,mounted=null,catalogDistrict='all';
@@ -37,7 +38,7 @@
       const raw=window.localStorage.getItem(KEY);if(!raw)return;
       let saved;try{saved=JSON.parse(raw);}catch{invalidSaved=true;return;}
       if(!saved||saved.version!==2||!Array.isArray(saved.selected)){invalidSaved=true;return;}
-      selected=new Set(saved.selected.filter(id=>typeof id==='string'&&known.has(id)));
+      selected=new Set(saved.selected.filter(id=>typeof id==='string'&&comparable.has(id)));
       if(['ru','en'].includes(saved.language))language=saved.language;
       if(['AED','USD'].includes(saved.currency))currency=saved.currency;
       if(known.has(saved.projectId))projectId=saved.projectId;
@@ -56,8 +57,19 @@
   function picker(){const available=offers.filter(o=>districtKey(o)===district);return `<details class="project-picker"${pickerOpen?' open':''}><summary class="picker-summary"><span class="picker-label">${t('chooseProject')}</span><span class="picker-mark" aria-hidden="true">+</span></summary><div class="picker-content"><div class="picker-row"><span class="picker-row-label">${t('areas')}</span><div class="picker-options" role="group" aria-label="${t('areas')}">${[...districtNames].map(([key,name])=>`<button class="picker-option" data-district="${escape(key)}" aria-pressed="${key===district}">${escape(local(name))}</button>`).join('')}</div></div><div class="picker-row"><span class="picker-row-label">${t('projectLabel')}</span><div class="picker-options" role="group" aria-label="${t('projectLabel')}">${available.length>1?available.map(o=>`<button class="picker-option" data-project-choice="${o.id}" aria-pressed="${o.id===projectId}">${escape(projectName(o))}</button>`).join(''):`<span class="picker-only">${escape(projectName(available[0]))}</span>`}</div></div></details>`;}
   const districtSlug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   function navigateDistrict(name){location.hash=name==='all'?'#projects':'#district='+districtSlug(name);}
-  function catalogView(){const visible=offers.filter(o=>catalogDistrict==='all'||districtKey(o)===catalogDistrict);return `<section class="intro overview-intro"><h1>${t('catalogTitle')}</h1><p>${t('catalogLead')}</p></section><div class="overview-filters" role="group" aria-label="${t('areas')}"><button class="picker-option" data-catalog-district="all" aria-pressed="${catalogDistrict==='all'}">${t('all')}</button>${[...catalogDistrictNames].map(([key,name])=>`<button class="picker-option" data-catalog-district="${escape(key)}" aria-pressed="${catalogDistrict===key}">${escape(local(name))}</button>`).join('')}</div>${window.DistrictSlides?.has(catalogDistrict)?window.DistrictSlides.overview(catalogDistrict,language,currency,{hideProjects:visible.length===0}):''}${window.DistrictSlides?.has(catalogDistrict)&&visible.length?`<h2 class="district-projects-heading">${language==='ru'?'Проекты района':'District projects'}</h2>`:''}<section id="district-projects" tabindex="-1" class="overview-grid" aria-label="${t('catalog')}">${visible.map(o=>`<article class="overview-card${selected.has(o.id)?' is-selected':''}" data-overview-project="${o.id}"><a class="overview-district-link" href="#district=${districtSlug(districtKey(o))}">${escape(local(districtValue(o)))}</a><a class="overview-main" href="#project=${o.id}"><div class="overview-image"><img src="${escape(o.image)}" alt="${escape(projectName(o)+' · '+t('rendering'))}" width="760" height="430"><span>${escape(local(districtValue(o)))}</span></div><div class="overview-body"><h2>${escape(projectName(o))}</h2><div class="overview-facts"><span>${t('handover')}: ${escape(handover(o))}</span><span>${t('unitCount')}: ${o.data.units.length}</span></div><p class="overview-units">${o.data.units.map(u=>escape(u.id)).join(' · ')}</p><span class="overview-open">${t('openProject')}</span></div></a><button class="overview-compare button" data-select="${o.id}" aria-pressed="${selected.has(o.id)}">${selected.has(o.id)?t('chosen'):t('add')}</button></article>`).join('')}</section>`;}
-  function projectView(){return '<a class="back" href="#projects">'+t('back')+'</a>'+picker()+`<div class="project-region"><div class="selected-project-tools"><button class="button" data-select="${projectId}" aria-pressed="${selected.has(projectId)}">${selected.has(projectId)?(language==='ru'?'✓ В сравнении':'✓ Selected'):(language==='ru'?'В сравнение':'Compare')}</button></div><div id="active-offer" class="offer-host" role="region" aria-label="${escape(projectName(offers.find(o=>o.id===projectId)))}"></div></div>`;}
+  function catalogView(){
+    const visible=offers.filter(o=>catalogDistrict==='all'||districtKey(o)===catalogDistrict);
+    const card=o=>{
+      const preview=isOverview(o);
+      const counts=preview?(language==='ru'?'Планировок: ':'Floor plans: ')+o.data.layouts.length:t('unitCount')+': '+o.data.units.length;
+      const units=preview?'1BR · 2BR':o.data.units.map(u=>escape(u.id)).join(' · ');
+      const open=preview?(language==='ru'?'Смотреть планировки →':'Explore floor plans →'):t('openProject');
+      return `<article class="overview-card${selected.has(o.id)?' is-selected':''}" data-overview-project="${o.id}"><a class="overview-district-link" href="#district=${districtSlug(districtKey(o))}">${escape(local(districtValue(o)))}</a><a class="overview-main" href="#project=${o.id}"><div class="overview-image"><img src="${escape(o.image)}" alt="${escape(projectName(o)+' · '+t('rendering'))}" width="760" height="430"><span>${escape(local(districtValue(o)))}</span></div><div class="overview-body"><h2>${escape(projectName(o))}</h2><div class="overview-facts"><span>${t('handover')}: ${escape(handover(o))}</span><span>${counts}</span></div><p class="overview-units">${units}</p><span class="overview-open">${open}</span></div></a>${preview?'':`<button class="overview-compare button" data-select="${o.id}" aria-pressed="${selected.has(o.id)}">${selected.has(o.id)?t('chosen'):t('add')}</button>`}</article>`;
+    };
+    return `<section class="intro overview-intro"><h1>${t('catalogTitle')}</h1><p>${t('catalogLead')}</p></section><div class="overview-filters" role="group" aria-label="${t('areas')}"><button class="picker-option" data-catalog-district="all" aria-pressed="${catalogDistrict==='all'}">${t('all')}</button>${[...catalogDistrictNames].map(([key,name])=>`<button class="picker-option" data-catalog-district="${escape(key)}" aria-pressed="${catalogDistrict===key}">${escape(local(name))}</button>`).join('')}</div>${window.DistrictSlides?.has(catalogDistrict)?window.DistrictSlides.overview(catalogDistrict,language,currency,{hideProjects:visible.length===0}):''}${window.DistrictSlides?.has(catalogDistrict)&&visible.length?`<h2 class="district-projects-heading">${language==='ru'?'Проекты района':'District projects'}</h2>`:''}<section id="district-projects" tabindex="-1" class="overview-grid" aria-label="${t('catalog')}">${visible.map(card).join('')}</section>`;
+  }
+  function projectCompareButton(){if(isOverview(offers.find(o=>o.id===projectId)))return '';return `<button class="button" data-select="${projectId}" aria-pressed="${selected.has(projectId)}">${selected.has(projectId)?(language==='ru'?'✓ В сравнении':'✓ Selected'):(language==='ru'?'В сравнение':'Compare')}</button>`;}
+  function projectView(){return '<a class="back" href="#projects">'+t('back')+'</a>'+picker()+`<div class="project-region"><div class="selected-project-tools">${projectCompareButton()}</div><div id="active-offer" class="offer-host" role="region" aria-label="${escape(projectName(offers.find(o=>o.id===projectId)))}"></div></div>`;}
   function homeView(){return `<section class="home-placeholder"><p class="home-label">${t('home')}</p><h1>${t('homeTitle')}</h1><div class="profile-slot">${language==='ru'?'Фотография':'Photograph'}</div><p>${t('homeText')}</p><a class="button primary" href="#projects">${t('catalog')}</a></section>`;}
 
   const compareMedia=window.matchMedia('(max-width:760px)');
@@ -108,7 +120,7 @@
     return lines;
   }
   function comparison(){
-    const chosen=offers.filter(o=>selected.has(o.id)),mobile=compareMedia.matches;
+    const chosen=offers.filter(o=>comparable.has(o.id)&&selected.has(o.id)),mobile=compareMedia.matches;
     const count=chosen.length,n=mobile?1:3;
     const ru=language==='ru';
     const intro=`<a class="back" href="#projects">${t('back')}</a><section class="intro matrix-intro"><div><h1>${ru?'Сравнение':'Comparison'} <span>· ${count}</span></h1><p>${ru?'Проекты сверху · категории слева':'Projects across · categories down'}</p></div>${count?`<button class="text-button matrix-clear" data-clear>${t('clear')}</button>`:''}</section>`;
@@ -123,7 +135,7 @@
   }
   compareMedia.addEventListener('change',()=>{if(location.hash==='#compare')render();});
 
-  function syncContact(page){window.OfferContact?.update({page,language,project_id:page==='projects'?projectId:page==='compare'?'comparison':'catalog',projectName:page==='projects'?projectName(offers.find(o=>o.id===projectId)):'',unit_id:page==='projects'?(unitChoice[projectId]||offers.find(o=>o.id===projectId).data.units[0].id):'',selectedProjects:offers.filter(o=>selected.has(o.id)).map(o=>({id:o.id,name:projectName(o)}))});}
+  function syncContact(page){window.OfferContact?.update({page,language,project_id:page==='projects'?projectId:page==='compare'?'comparison':'catalog',projectName:page==='projects'?projectName(offers.find(o=>o.id===projectId)):'',unit_id:page==='projects'?(unitChoice[projectId]||offers.find(o=>o.id===projectId).data.units[0]?.id||''):'',selectedProjects:offers.filter(o=>selected.has(o.id)).map(o=>({id:o.id,name:projectName(o)}))});}
   let pendingCompareSelection=null;
   function projectRoute(){
     if(!location.hash.startsWith('#project='))return {project:null,unit:null};
@@ -160,7 +172,7 @@
     document.getElementById('primary-nav').innerHTML=[['projects',t('catalog')],['compare',(language==='ru'?'Сравнение':'Compare')+' · '+selected.size]].map(([key,label])=>`<a href="#${key}"${(key===page||key==='projects'&&page==='catalog')?' aria-current="page"':''}>${label}</a>`).join('');
     if(page==='projects'&&mounted?.id===projectId&&main.querySelector('#active-offer')){
       main.querySelector('.project-picker').outerHTML=picker();
-      const b=main.querySelector('.selected-project-tools button');b.dataset.select=projectId;b.setAttribute('aria-pressed',String(selected.has(projectId)));b.textContent=selected.has(projectId)?(language==='ru'?'✓ В сравнении':'✓ Selected'):(language==='ru'?'В сравнение':'Compare');
+      main.querySelector('.selected-project-tools').innerHTML=projectCompareButton();
       mounted.sync(language,currency,unitChoice[projectId]);
     }else{
       mounted?.dispose();mounted=null;
@@ -172,9 +184,9 @@
     bar.hidden=page==='home';bar.setAttribute('aria-label',t('selection'));
     bar.innerHTML=`<div class="selection-text"><strong>${t('projects')}: ${selected.size}</strong><span>${memoryOnly?(language==='ru'?'В текущей вкладке':'In this tab'):t('selectionHint')}</span></div><div class="bar-actions"><button class="button contact-trigger" type="button" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog"><span class="contact-desktop-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span><span class="contact-mobile-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span></button>${selected.size?`<button class="text-button" data-clear>${t('clear')}</button>`:''}<a class="button primary" data-compare href="#compare">${t('compare')} · ${selected.size}</a></div>`;
     const notice=document.getElementById('storage-notice');notice.textContent=unknownProject?t('unknownProject'):unknownUnit?(language==='ru'?'Квартира по этой ссылке не найдена. Проверьте номер или выберите квартиру ниже.':'The apartment in this link was not found. Check the number or choose an apartment below.'):memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');notice.classList.toggle('warning',memoryOnly||invalidSaved||unknownProject||unknownUnit);
-    document.getElementById('source-note').textContent=(language==='ru'?'Данные из проверенных офферов · ':'Verified offer data · ')+snapshot.verifiedDate;
+    document.getElementById('source-note').textContent=page==='projects'&&isOverview(active)?(language==='ru'?'Планировки из буклета проекта. Наличие квартир уточняется.':'Layouts from the project brochure. Apartment availability is to be confirmed.'):(language==='ru'?'Данные из проверенных офферов · ':'Verified offer data · ')+snapshot.verifiedDate;
     document.title=(page==='catalog'&&window.DistrictSlides?.has(catalogDistrict)?catalogDistrict:page==='projects'?projectName(active):page==='catalog'?t('catalogTitle'):t('comparison'))+' · '+t('profile');
-    window.OfferAnalytics?.view({page,project_id:page==='catalog'?'catalog':projectId,unit_id:page==='projects'?(unitChoice[projectId]||active.data.units[0].id):'',title:page==='projects'?projectName(active)+' · Project':page==='catalog'?'All projects':'Project comparison',language});
+    window.OfferAnalytics?.view({page,project_id:page==='catalog'?'catalog':projectId,unit_id:page==='projects'?(unitChoice[projectId]||active.data.units[0]?.id||''):'',title:page==='projects'?projectName(active)+' · Project':page==='catalog'?'All projects':'Project comparison',language});
     window.OfferAnalytics?.observe(page==='projects'?mounted.root:null);
     syncContact(page);
     if(pendingCompareSelection){
@@ -195,7 +207,7 @@
     else if(b.dataset.projectChoice){projectId=b.dataset.projectChoice;district=districtKey(offers.find(o=>o.id===projectId));persist();navigateProject(projectId);}
     else if(b.dataset.language){language=b.dataset.language;persist();render();document.querySelector(`[data-language="${language}"]`).focus();}
     else if(b.dataset.currency){currency=b.dataset.currency;persist();render();document.querySelector(`[data-currency="${currency}"]`).focus();}
-    else if(b.dataset.select){const id=b.dataset.select;if(!known.has(id))return;const removed=selected.delete(id);if(!removed)selected.add(id);persist();render();window.OfferAnalytics?.event('comparison_change',{project_id:id,section_id:'comparison',action:removed?'remove':'add',comparison_count:selected.size});announce(removed?'removed':'added');document.querySelector(`[data-select="${id}"]`)?.focus();}
+    else if(b.dataset.select){const id=b.dataset.select;if(!comparable.has(id))return;const removed=selected.delete(id);if(!removed)selected.add(id);persist();render();window.OfferAnalytics?.event('comparison_change',{project_id:id,section_id:'comparison',action:removed?'remove':'add',comparison_count:selected.size});announce(removed?'removed':'added');document.querySelector(`[data-select="${id}"]`)?.focus();}
     else if(b.dataset.remove){const id=b.dataset.remove;selected.delete(id);persist();render();window.OfferAnalytics?.event('comparison_change',{project_id:id,section_id:'comparison',action:'remove',comparison_count:selected.size});announce('removed');main.querySelector('h1')?.setAttribute('tabindex','-1');main.querySelector('h1')?.focus({preventScroll:true});}
     else if(b.hasAttribute('data-clear')){if(selected.size)window.OfferAnalytics?.event('comparison_change',{project_id:'comparison',section_id:'comparison',action:'clear',comparison_count:selected.size});selected.clear();persist();render();announce('cleared');}
   });
