@@ -61,9 +61,13 @@
     const visible=offers.filter(o=>catalogDistrict==='all'||districtKey(o)===catalogDistrict);
     const card=o=>{
       const preview=isOverview(o);
-      const counts=preview?(language==='ru'?'Планировок: ':'Floor plans: ')+o.data.layouts.length:t('unitCount')+': '+o.data.units.length;
-      const units=preview?'1BR · 2BR':o.data.units.map(u=>escape(u.id)).join(' · ');
-      const open=preview?(language==='ru'?'Смотреть планировки →':'Explore floor plans →'):t('openProject');
+      const priced=preview&&Boolean(o.data.priceGuide);
+      const counts=priced?(language==='ru'?'Форматов: ':'Apartment types: ')+o.data.layouts.length
+        :preview?(language==='ru'?'Планировок: ':'Floor plans: ')+o.data.layouts.length:t('unitCount')+': '+o.data.units.length;
+      const types=preview?[...new Set(o.data.layouts.map(layout=>local(layout.title??layout.bedrooms)))]:o.data.units.map(u=>u.id);
+      const units=types.map(escape).join(' · ');
+      const open=priced?(language==='ru'?'Смотреть цены и схемы →':'Explore prices and floor plans →')
+        :preview?(language==='ru'?'Смотреть планировки →':'Explore floor plans →'):t('openProject');
       return `<article class="overview-card${selected.has(o.id)?' is-selected':''}" data-overview-project="${o.id}"><a class="overview-district-link" href="#district=${districtSlug(districtKey(o))}">${escape(local(districtValue(o)))}</a><a class="overview-main" href="#project=${o.id}"><div class="overview-image"><img src="${escape(o.image)}" alt="${escape(projectName(o)+' · '+t('rendering'))}" width="760" height="430"><span>${escape(local(districtValue(o)))}</span></div><div class="overview-body"><h2>${escape(projectName(o))}</h2><div class="overview-facts"><span>${t('handover')}: ${escape(handover(o))}</span><span>${counts}</span></div><p class="overview-units">${units}</p><span class="overview-open">${open}</span></div></a>${preview?'':`<button class="overview-compare button" data-select="${o.id}" aria-pressed="${selected.has(o.id)}">${selected.has(o.id)?t('chosen'):t('add')}</button>`}</article>`;
     };
     return `<section class="intro overview-intro"><h1>${t('catalogTitle')}</h1><p>${t('catalogLead')}</p></section><div class="overview-filters" role="group" aria-label="${t('areas')}"><button class="picker-option" data-catalog-district="all" aria-pressed="${catalogDistrict==='all'}">${t('all')}</button>${[...catalogDistrictNames].map(([key,name])=>`<button class="picker-option" data-catalog-district="${escape(key)}" aria-pressed="${catalogDistrict===key}">${escape(local(name))}</button>`).join('')}</div>${window.DistrictSlides?.has(catalogDistrict)?window.DistrictSlides.overview(catalogDistrict,language,currency,{hideProjects:visible.length===0}):''}${window.DistrictSlides?.has(catalogDistrict)&&visible.length?`<h2 class="district-projects-heading">${language==='ru'?'Проекты района':'District projects'}</h2>`:''}<section id="district-projects" tabindex="-1" class="overview-grid" aria-label="${t('catalog')}">${visible.map(card).join('')}</section>`;
@@ -184,7 +188,14 @@
     bar.hidden=page==='home';bar.setAttribute('aria-label',t('selection'));
     bar.innerHTML=`<div class="selection-text"><strong>${t('projects')}: ${selected.size}</strong><span>${memoryOnly?(language==='ru'?'В текущей вкладке':'In this tab'):t('selectionHint')}</span></div><div class="bar-actions"><button class="button contact-trigger" type="button" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog"><span class="contact-desktop-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span><span class="contact-mobile-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span></button>${selected.size?`<button class="text-button" data-clear>${t('clear')}</button>`:''}<a class="button primary" data-compare href="#compare">${t('compare')} · ${selected.size}</a></div>`;
     const notice=document.getElementById('storage-notice');notice.textContent=unknownProject?t('unknownProject'):unknownUnit?(language==='ru'?'Квартира по этой ссылке не найдена. Проверьте номер или выберите квартиру ниже.':'The apartment in this link was not found. Check the number or choose an apartment below.'):memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');notice.classList.toggle('warning',memoryOnly||invalidSaved||unknownProject||unknownUnit);
-    document.getElementById('source-note').textContent=page==='projects'&&isOverview(active)?(language==='ru'?'Планировки из буклета проекта. Наличие квартир уточняется.':'Layouts from the project brochure. Apartment availability is to be confirmed.'):(language==='ru'?'Данные из проверенных офферов · ':'Verified offer data · ')+snapshot.verifiedDate;
+    const sourceNote=document.getElementById('source-note');
+    if(page==='projects'&&isOverview(active)){
+      sourceNote.textContent=active.data.priceGuide
+        ?(language==='ru'?'Типовая схема GRID и стартовые цены':'GRID typical floor plan and starting prices')
+        :(language==='ru'?'Планировки из буклета проекта. Наличие квартир уточняется.':'Layouts from the project brochure. Apartment availability is to be confirmed.');
+    }else{
+      sourceNote.textContent=(language==='ru'?'Данные из проверенных офферов · ':'Verified offer data · ')+snapshot.verifiedDate;
+    }
     document.title=(page==='catalog'&&window.DistrictSlides?.has(catalogDistrict)?catalogDistrict:page==='projects'?projectName(active):page==='catalog'?t('catalogTitle'):t('comparison'))+' · '+t('profile');
     window.OfferAnalytics?.view({page,project_id:page==='catalog'?'catalog':projectId,unit_id:page==='projects'?(unitChoice[projectId]||active.data.units[0]?.id||''):'',title:page==='projects'?projectName(active)+' · Project':page==='catalog'?'All projects':'Project comparison',language});
     window.OfferAnalytics?.observe(page==='projects'?mounted.root:null);
