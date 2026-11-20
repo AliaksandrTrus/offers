@@ -4,7 +4,9 @@
   const main=document.getElementById('main'),bar=document.getElementById('selection-bar');
   if(!snapshot?.offers?.length){main.textContent='Не удалось загрузить данные офферов. / Offer data could not be loaded.';return;}
   const offers=snapshot.offers,known=new Set(offers.map(o=>o.id));
-  const isOverview=o=>o?.data?.kind==='project_overview',comparable=new Set(offers.filter(o=>!isOverview(o)).map(o=>o.id));
+  const isOverview=o=>o?.data?.kind==='project_overview';
+  const hasStartingPrices=o=>isOverview(o)&&Boolean(o.data.priceGuide);
+  const comparable=new Set(offers.filter(o=>!isOverview(o)||hasStartingPrices(o)).map(o=>o.id));
   const KEY='personal-offers:unified:v1';
   let language='ru',currency='AED',district='',selected=new Set(),memoryOnly=false,invalidSaved=false;
   let projectId=offers[0].id,unitChoice={},pickerOpen=false,mounted=null,catalogDistrict='all';
@@ -16,6 +18,8 @@
   Object.assign(words.en,{home:'Home',catalog:'Projects',back:'← Projects',emptyText:'Add projects to comparison from a project page.',choose:'Choose projects',areas:'Districts',projectLabel:'Projects',chooseProject:'Choose district and project',homeTitle:'About me',homeText:'A photograph and a short introduction to Aliaksandr will go here. This section has not been filled in yet.',profile:'Aliaksandr',homeBroker:'Dubai real estate'});
   Object.assign(words.ru,{catalog:'Все проекты',catalogTitle:'Проекты в Дубае',catalogLead:'Выберите проект — планировки, стоимость и условия оплаты внутри.',openProject:'Смотреть квартиры →',unitCount:'Квартир в подборке',unknownProject:'Проект по этой ссылке не найден. Выберите один из доступных проектов.',back:'← Все проекты'});
   Object.assign(words.en,{catalog:'All projects',catalogTitle:'Projects in Dubai',catalogLead:'Choose a project to explore floor plans, prices and payment terms.',openProject:'View apartments →',unitCount:'Apartments in this offer',unknownProject:'The project in this link was not found. Choose an available project below.',back:'← All projects'});
+  Object.assign(words.ru,{starting:'Стартовые цены',formats:'Форматы',from:'от',openLayout:'Открыть схему',startingNote:'Цены «от» указаны для форматов. Цены и наличие конкретных квартир уточняются.',unknownLayout:'Формат по ссылке не найден. Выберите один из вариантов ниже.'});
+  Object.assign(words.en,{starting:'Starting prices',formats:'Apartment types',from:'from',openLayout:'Open floor example',startingNote:'“From” prices are for apartment types. Current prices and availability are confirmed for each apartment.',unknownLayout:'The linked apartment type was not found. Choose one of the types below.'});
   const t=k=>words[language][k];
   const local=v=>typeof v==='string'?v:(v?.[language]??'');
   const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -26,11 +30,11 @@
   const catalogDistrictNames=new Map(districtNames);
   for(const d of window.DISTRICT_OVERVIEWS||[])if(d.districtKey&&!catalogDistrictNames.has(d.districtKey))catalogDistrictNames.set(d.districtKey,{ru:d.name,en:d.name});
   district=districtKey(offers[0]);
-  function money(amount){
+  function money(amount,code=currency){
     if(typeof amount!=='number'||!Number.isFinite(amount))return escape(t('missing'));
-    const value=currency==='USD'?Math.round(Math.round(amount*100)/366):amount;
-    const formatted=new Intl.NumberFormat(language==='ru'?'ru-RU':'en-US',{minimumFractionDigits:0,maximumFractionDigits:currency==='USD'?0:2}).format(value);
-    return `<span class="money" data-aed="${amount}" data-currency-value="${currency}">${escape(formatted)} <small>${currency}</small></span>`;
+    const value=code==='USD'?Math.round(Math.round(amount*100)/366):amount;
+    const formatted=new Intl.NumberFormat(language==='ru'?'ru-RU':'en-US',{minimumFractionDigits:0,maximumFractionDigits:code==='USD'?0:2}).format(value);
+    return `<span class="money" data-aed="${amount}" data-currency-value="${code}">${escape(formatted)} <small>${code}</small></span>`;
   }
   function rich(value){if(Array.isArray(value))return value.map(p=>Object.hasOwn(p,'amount')?money(p.amount):escape(local(p.text??p))).join('');return escape(local(value));}
   function readSaved(){
@@ -61,30 +65,30 @@
     const visible=offers.filter(o=>catalogDistrict==='all'||districtKey(o)===catalogDistrict);
     const card=o=>{
       const preview=isOverview(o);
-      const priced=preview&&Boolean(o.data.priceGuide);
+      const priced=hasStartingPrices(o);
       const counts=priced?(language==='ru'?'Форматов: ':'Apartment types: ')+o.data.layouts.length
         :preview?(language==='ru'?'Планировок: ':'Floor plans: ')+o.data.layouts.length:t('unitCount')+': '+o.data.units.length;
       const types=preview?[...new Set(o.data.layouts.map(layout=>local(layout.title??layout.bedrooms)))]:o.data.units.map(u=>u.id);
       const units=types.map(escape).join(' · ');
       const open=priced?(language==='ru'?'Смотреть цены и схемы →':'Explore prices and floor plans →')
         :preview?(language==='ru'?'Смотреть планировки →':'Explore floor plans →'):t('openProject');
-      return `<article class="overview-card${selected.has(o.id)?' is-selected':''}" data-overview-project="${o.id}"><a class="overview-district-link" href="#district=${districtSlug(districtKey(o))}">${escape(local(districtValue(o)))}</a><a class="overview-main" href="#project=${o.id}"><div class="overview-image"><img src="${escape(o.image)}" alt="${escape(projectName(o)+' · '+t('rendering'))}" width="760" height="430"><span>${escape(local(districtValue(o)))}</span></div><div class="overview-body"><h2>${escape(projectName(o))}</h2><div class="overview-facts"><span>${t('handover')}: ${escape(handover(o))}</span><span>${counts}</span></div><p class="overview-units">${units}</p><span class="overview-open">${open}</span></div></a>${preview?'':`<button class="overview-compare button" data-select="${o.id}" aria-pressed="${selected.has(o.id)}">${selected.has(o.id)?t('chosen'):t('add')}</button>`}</article>`;
+      return `<article class="overview-card${selected.has(o.id)?' is-selected':''}" data-overview-project="${o.id}"><a class="overview-district-link" href="#district=${districtSlug(districtKey(o))}">${escape(local(districtValue(o)))}</a><a class="overview-main" href="#project=${o.id}"><div class="overview-image"><img src="${escape(o.image)}" alt="${escape(projectName(o)+' · '+t('rendering'))}" width="760" height="430"><span>${escape(local(districtValue(o)))}</span></div><div class="overview-body"><h2>${escape(projectName(o))}</h2><div class="overview-facts"><span>${t('handover')}: ${escape(handover(o))}</span><span>${counts}</span></div><p class="overview-units">${units}</p><span class="overview-open">${open}</span></div></a>${comparable.has(o.id)?`<button class="overview-compare button" data-select="${o.id}" aria-pressed="${selected.has(o.id)}">${selected.has(o.id)?t('chosen'):t('add')}</button>`:''}</article>`;
     };
     return `<section class="intro overview-intro"><h1>${t('catalogTitle')}</h1><p>${t('catalogLead')}</p></section><div class="overview-filters" role="group" aria-label="${t('areas')}"><button class="picker-option" data-catalog-district="all" aria-pressed="${catalogDistrict==='all'}">${t('all')}</button>${[...catalogDistrictNames].map(([key,name])=>`<button class="picker-option" data-catalog-district="${escape(key)}" aria-pressed="${catalogDistrict===key}">${escape(local(name))}</button>`).join('')}</div>${window.DistrictSlides?.has(catalogDistrict)?window.DistrictSlides.overview(catalogDistrict,language,currency,{hideProjects:visible.length===0}):''}${window.DistrictSlides?.has(catalogDistrict)&&visible.length?`<h2 class="district-projects-heading">${language==='ru'?'Проекты района':'District projects'}</h2>`:''}<section id="district-projects" tabindex="-1" class="overview-grid" aria-label="${t('catalog')}">${visible.map(card).join('')}</section>`;
   }
-  function projectCompareButton(){if(isOverview(offers.find(o=>o.id===projectId)))return '';return `<button class="button" data-select="${projectId}" aria-pressed="${selected.has(projectId)}">${selected.has(projectId)?(language==='ru'?'✓ В сравнении':'✓ Selected'):(language==='ru'?'В сравнение':'Compare')}</button>`;}
+  function projectCompareButton(){if(!comparable.has(projectId))return '';return `<button class="button" data-select="${projectId}" aria-pressed="${selected.has(projectId)}">${selected.has(projectId)?t('chosen'):(language==='ru'?'В сравнение':'Compare')}</button>`;}
   function projectView(){return '<a class="back" href="#projects">'+t('back')+'</a>'+picker()+`<div class="project-region"><div class="selected-project-tools">${projectCompareButton()}</div><div id="active-offer" class="offer-host" role="region" aria-label="${escape(projectName(offers.find(o=>o.id===projectId)))}"></div></div>`;}
   function homeView(){return `<section class="home-placeholder"><p class="home-label">${t('home')}</p><h1>${t('homeTitle')}</h1><div class="profile-slot">${language==='ru'?'Фотография':'Photograph'}</div><p>${t('homeText')}</p><a class="button primary" href="#projects">${t('catalog')}</a></section>`;}
 
   const compareMedia=window.matchMedia('(max-width:760px)');
   const categories=[['minimum_price','Минимальная цена','Minimum price'],['value_per_m2','Выгодный метр','Best area value'],['premium','Премиум','Premium']];
   const categoryName=key=>{const c=categories.find(x=>x[0]===key);return c?.[language==='ru'?1:2]||t('missing');};
-  function metricValue(u){
-    const sqft=u.selection?.totalAreaSqft,m2=u.selection?.totalAreaM2;
-    const valid=Number.isFinite(sqft)&&sqft>0&&Number.isFinite(m2)&&m2>0&&Number.isFinite(u.price);
+  function metricValue(price,sqft,m2,code=currency){
+    const valid=Number.isFinite(sqft)&&sqft>0&&Number.isFinite(m2)&&m2>0&&Number.isFinite(price);
     if(!valid)return {area:t('missing'),rate:t('missing')};
     const fmt=n=>new Intl.NumberFormat(language==='ru'?'ru-RU':'en-GB',{minimumFractionDigits:1,maximumFractionDigits:1}).format(n);
-    return {area:fmt(currency==='AED'?sqft:m2)+' '+(currency==='AED'?'sq ft':language==='ru'?'м²':'m²'),rate:fmt(currency==='AED'?u.price/sqft:u.price/3.66/m2)+' '+currency+'/'+(currency==='AED'?'sq ft':language==='ru'?'м²':'m²')};
+    const unit=code==='AED'?'sq ft':language==='ru'?'м²':'m²';
+    return {area:fmt(code==='AED'?sqft:m2)+' '+unit,rate:fmt(code==='AED'?price/sqft:price/3.66/m2)+' '+code+'/'+unit};
   }
   function compactPlan(u,o){
     const p=u.payments,s=p?.stages;
@@ -123,6 +127,32 @@
     }else for(const stage of s.slice(1))lines.push(local(stage.label)+' · '+local(stage.subtitle));
     return lines;
   }
+  function startingPrices(offer,columns,rows){
+    const codes=currency==='AED'?['AED','USD']:['USD','AED'];
+    return `<td colspan="${columns}" rowspan="${rows}" class="matrix-starting" data-starting-project="${offer.id}">
+      <ul class="matrix-starting-list">${offer.data.layouts.map(layout=>{
+        const metrics=codes.map(code=>metricValue(layout.startingPriceAed,layout.totalSqft,layout.totalM2,code));
+        const href='#project='+encodeURIComponent(offer.id)+'&layout='+encodeURIComponent(layout.id);
+        return `<li><a class="matrix-starting-link" href="${escape(href)}" data-compare-layout="${escape(layout.id)}" title="${t('openLayout')}">
+          <strong>${escape(local(layout.title))}</strong>
+          ${codes.map(code=>`<span class="matrix-starting-money"><small>${t('from')}</small>${money(layout.startingPriceAed,code)}</span>`).join('')}
+        </a><span class="matrix-area">${escape(metrics[0].area)}</span>
+        ${metrics.map(m=>`<span class="matrix-rate">${escape(m.rate)}</span>`).join('')}</li>`;
+      }).join('')}</ul>
+    </td>`;
+  }
+  function comparisonPayment(offer,columns){
+    let content;
+    if(hasStartingPrices(offer)){
+      content=offer.data.priceGuide.stages.map(stage=>`<span>${stage.share}% ${escape(local(stage.title))}</span>`).join('');
+    }else{
+      const plans=offer.data.units.map(u=>({u,lines:compactPlan(u,offer)}));
+      const shared=plans.every(plan=>JSON.stringify(plan.lines)===JSON.stringify(plans[0].lines));
+      const lines=values=>values.map(text=>`<span>${escape(text)}</span>`).join('');
+      content=shared?lines(plans[0].lines):plans.map(plan=>`<div><strong>${escape(categoryName(plan.u.selection?.category))}</strong>${lines(plan.lines)}</div>`).join('');
+    }
+    return `<td colspan="${columns}" class="matrix-payment" data-payment-project="${offer.id}">${content}</td>`;
+  }
   function comparison(){
     const chosen=offers.filter(o=>comparable.has(o.id)&&selected.has(o.id)),mobile=compareMedia.matches;
     const count=chosen.length,n=mobile?1:3;
@@ -131,25 +161,50 @@
     if(!count)return intro+`<section class="empty"><h2>${t('emptyTitle')}</h2><p>${t('emptyText')}</p><a class="button primary" href="#projects">${t('choose')}</a></section>`;
     const metricHeaders=[ru?'Цена':'Price',ru?'Площадь':'Area',ru?'Ставка':'Rate'];
     const categoryHeader=ru?'Категория':'Category';
-    const head=`<thead><tr><th scope="col" class="matrix-category" rowspan="${mobile?1:2}">${categoryHeader}</th>${chosen.map(o=>`<th scope="colgroup" colspan="${n}" class="matrix-project"><a class="matrix-project-link" data-compare-project-link="${o.id}" href="#project=${encodeURIComponent(o.id)}">${escape(projectName(o))}</a><span class="matrix-district">${escape(local(districtValue(o)))}</span><button class="matrix-remove" type="button" data-remove="${o.id}" aria-label="${escape(t('remove')+' · '+projectName(o))}">×</button></th>`).join('')}</tr>${mobile?'':`<tr class="matrix-subheads">${chosen.map(()=>metricHeaders.map(h=>`<th scope="col">${h}</th>`).join('')).join('')}</tr>`}</thead>`;
+    const head=`<thead><tr><th scope="col" class="matrix-category" rowspan="${mobile?1:2}">${categoryHeader}</th>${chosen.map(o=>`<th scope="colgroup" colspan="${n}" class="matrix-project"><a class="matrix-project-link" data-compare-project-link="${o.id}" href="#project=${encodeURIComponent(o.id)}">${escape(projectName(o))}</a><span class="matrix-district">${escape(local(districtValue(o)))}</span>${mobile&&hasStartingPrices(o)?`<span class="matrix-starting-label">${t('starting')}</span>`:''}<button class="matrix-remove" type="button" data-remove="${o.id}" aria-label="${escape(t('remove')+' · '+projectName(o))}">×</button></th>`).join('')}</tr>${mobile?'':`<tr class="matrix-subheads">${chosen.map(o=>hasStartingPrices(o)?`<th colspan="${n}">${t('starting')}</th>`:metricHeaders.map(h=>`<th scope="col">${h}</th>`).join('')).join('')}</tr>`}</thead>`;
     const priceCell=(o,u)=>`<a class="matrix-price-link${currency==='AED'&&!Number.isInteger(u.price)?' has-decimals':''}" data-compare-offer="${o.id}" data-compare-unit="${escape(u.id)}" href="#project=${encodeURIComponent(o.id)}&unit=${encodeURIComponent(u.id)}" aria-label="${escape((ru?'Открыть квартиру ':'Open apartment ')+u.id+' · '+projectName(o))}">${money(u.price)}</a>`;
-    const body=categories.map(([key])=>`<tr class="matrix-unit-row" data-category="${key}"><th scope="row" class="matrix-category">${categoryName(key)}</th>${chosen.map(o=>{const u=o.data.units.find(x=>x.selection?.category===key);if(!u)return `<td colspan="${n}" class="matrix-missing">${t('missing')}</td>`;const m=metricValue(u);return mobile?`<td class="matrix-values" data-matrix-project="${o.id}" data-matrix-unit="${escape(u.id)}">${priceCell(o,u)}<span class="matrix-area">${escape(m.area)}</span><span class="matrix-rate">${escape(m.rate)}</span></td>`:`<td class="matrix-price" data-matrix-project="${o.id}" data-matrix-unit="${escape(u.id)}">${priceCell(o,u)}</td><td class="matrix-area-cell"><span class="matrix-area">${escape(m.area)}</span></td><td class="matrix-rate-cell"><span class="matrix-rate">${escape(m.rate)}</span></td>`;}).join('')}</tr>`).join('');
-    const payment=`<tr class="matrix-payment-row"><th scope="row" class="matrix-category">${ru?'План оплаты':'Payment plan'}</th>${chosen.map(o=>{const plans=o.data.units.map(u=>({u,lines:compactPlan(u,o)})),shared=plans.every(p=>JSON.stringify(p.lines)===JSON.stringify(plans[0].lines));return `<td colspan="${n}" class="matrix-payment" data-payment-project="${o.id}">${shared?plans[0].lines.map(s=>`<span>${escape(s)}</span>`).join(''):plans.map(p=>`<div><strong>${escape(categoryName(p.u.selection?.category))}</strong>${p.lines.map(s=>`<span>${escape(s)}</span>`).join('')}</div>`).join('')}</td>`;}).join('')}</tr>`;
-    return intro+`<div class="matrix-scroll${mobile&&count>3?' is-wide':''}" tabindex="0" aria-label="${ru?'Таблица сравнения проектов':'Project comparison table'}"><table class="comparison-matrix ${mobile?'is-mobile':'is-desktop'}" data-project-count="${count}" style="--project-count:${count}"><colgroup><col class="matrix-category-col">${chosen.map(()=>mobile?'<col class="matrix-project-col">':'<col class="matrix-price-col"><col class="matrix-area-col"><col class="matrix-rate-col">').join('')}</colgroup>${head}<tbody>${body}${payment}</tbody></table></div>${mobile&&count>3?`<p class="matrix-swipe-hint">${ru?'← Листайте проекты; категории закреплены →':'← Scroll projects; categories stay fixed →'}</p>`:''}<p class="matrix-note">${ru?'Нажмите проект или цену. Сборы — дополнительно. Полный график — в оффере.':'Select a project or price. Fees are additional. Full schedule is in the offer.'}</p>`;
+    const rows=chosen.some(o=>!hasStartingPrices(o))?categories.map(([key])=>key):['formats'];
+    const body=rows.map((key,row)=>`<tr class="matrix-unit-row" data-category="${key}"><th scope="row" class="matrix-category">${key==='formats'?t('formats'):categoryName(key)}</th>${chosen.map(o=>{
+      if(hasStartingPrices(o))return row===0?startingPrices(o,n,rows.length):'';
+      const u=o.data.units.find(x=>x.selection?.category===key);
+      if(!u)return `<td colspan="${n}" class="matrix-missing">${t('missing')}</td>`;
+      const m=metricValue(u.price,u.selection?.totalAreaSqft,u.selection?.totalAreaM2);
+      return mobile?`<td class="matrix-values" data-matrix-project="${o.id}" data-matrix-unit="${escape(u.id)}">${priceCell(o,u)}<span class="matrix-area">${escape(m.area)}</span><span class="matrix-rate">${escape(m.rate)}</span></td>`:`<td class="matrix-price" data-matrix-project="${o.id}" data-matrix-unit="${escape(u.id)}">${priceCell(o,u)}</td><td class="matrix-area-cell"><span class="matrix-area">${escape(m.area)}</span></td><td class="matrix-rate-cell"><span class="matrix-rate">${escape(m.rate)}</span></td>`;
+    }).join('')}</tr>`).join('');
+    const payment=`<tr class="matrix-payment-row"><th scope="row" class="matrix-category">${ru?'План оплаты':'Payment plan'}</th>${chosen.map(o=>comparisonPayment(o,n)).join('')}</tr>`;
+    const offerNote=ru?'Нажмите проект или цену. Сборы — дополнительно. Полный график — в оффере.':'Select a project or price. Fees are additional. Full schedule is in the offer.';
+    const note=[rows[0]==='formats'?'':offerNote,chosen.some(hasStartingPrices)?t('startingNote'):''].filter(Boolean).join(' ');
+    return intro+`<div class="matrix-scroll${count>3?' is-wide':''}" tabindex="0" aria-label="${ru?'Таблица сравнения проектов':'Project comparison table'}"><table class="comparison-matrix ${mobile?'is-mobile':'is-desktop'}" data-project-count="${count}" style="--project-count:${count}"><colgroup><col class="matrix-category-col">${chosen.map(()=>mobile?'<col class="matrix-project-col">':'<col class="matrix-price-col"><col class="matrix-area-col"><col class="matrix-rate-col">').join('')}</colgroup>${head}<tbody>${body}${payment}</tbody></table></div>${mobile&&count>3?`<p class="matrix-swipe-hint">${ru?'← Листайте проекты; категории закреплены →':'← Scroll projects; categories stay fixed →'}</p>`:''}<p class="matrix-note">${note}</p>`;
   }
   compareMedia.addEventListener('change',()=>{if(location.hash==='#compare')render();});
 
   function syncContact(page){window.OfferContact?.update({page,language,project_id:page==='projects'?projectId:page==='compare'?'comparison':'catalog',projectName:page==='projects'?projectName(offers.find(o=>o.id===projectId)):'',unit_id:page==='projects'?(unitChoice[projectId]||offers.find(o=>o.id===projectId).data.units[0]?.id||''):'',selectedProjects:offers.filter(o=>selected.has(o.id)).map(o=>({id:o.id,name:projectName(o)}))});}
   let pendingCompareSelection=null;
   function projectRoute(){
-    if(!location.hash.startsWith('#project='))return {project:null,unit:null};
-    const values=new URLSearchParams(location.hash.slice(1));return {project:values.get('project'),unit:values.get('unit')};
+    if(!location.hash.startsWith('#project='))return {project:null,unit:null,layout:null};
+    const values=new URLSearchParams(location.hash.slice(1));
+    return {project:values.get('project'),unit:values.get('unit'),layout:values.get('layout')};
   }
-  function focusRouteUnit(){
-    const r=projectRoute();if(!r.unit||!offers.find(o=>o.id===r.project)?.data.units.some(u=>u.id===r.unit))return;
-    const summary=mounted?.root.querySelector('#unit-summary');if(!summary)return;
+  function focusRouteChoice(){
+    const route=projectRoute();
+    const offer=offers.find(o=>o.id===route.project);
+    const unit=offer?.data.units.some(u=>u.id===route.unit);
+    const layout=hasStartingPrices(offer)&&offer.data.layouts.some(x=>x.id===route.layout);
+    if(!unit&&!layout)return false;
+    const summary=mounted?.root.querySelector(unit?'#unit-summary':'#layout-summary');
+    if(!summary)return false;
     const heading=summary.querySelector('h2,h3')||summary;heading.setAttribute('tabindex','-1');
     summary.scrollIntoView({block:'start',behavior:'instant'});heading.focus({preventScroll:true});
+    return true;
+  }
+  function addFromCompareLink(){
+    if(!location.hash.startsWith('#compare?'))return null;
+    const id=new URLSearchParams(location.hash.slice('#compare?'.length)).get('add');
+    history.replaceState(null,'','#compare');
+    if(!comparable.has(id)||selected.has(id))return null;
+    selected.add(id);
+    persist();
+    return id;
   }
   document.addEventListener('click',event=>{
     const link=event.target.closest('a[data-compare-unit]');if(!link||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
@@ -158,10 +213,13 @@
   function render(){
     // A plain shared URL always opens all projects, regardless of a saved selection.
     if(['#home','#catalog'].includes(location.hash))history.replaceState(null,'','#projects');
+    const addedProject=addFromCompareLink();
     const districtHash=location.hash.startsWith('#district=')?location.hash.slice(10):null;
     catalogDistrict=districtHash?[...catalogDistrictNames.keys()].find(k=>districtSlug(k)===districtHash)||'all':'all';
     const route=projectRoute(),target=route.project;
-    const unknownUnit=known.has(target)&&route.unit!==null&&!offers.find(o=>o.id===target).data.units.some(u=>u.id===route.unit);
+    const linkedOffer=offers.find(o=>o.id===target);
+    const unknownUnit=linkedOffer&&route.unit!==null&&!linkedOffer.data.units.some(u=>u.id===route.unit);
+    const unknownLayout=linkedOffer&&route.layout!==null&&(!hasStartingPrices(linkedOffer)||!linkedOffer.data.layouts.some(x=>x.id===route.layout));
     if(known.has(target)&&route.unit!==null&&!unknownUnit)unitChoice[target]=route.unit;
     const unknownProject=target!==null&&!known.has(target);
     if(known.has(target)){projectId=target;district=districtKey(offers.find(o=>o.id===projectId));persist();}
@@ -177,17 +235,36 @@
     if(page==='projects'&&mounted?.id===projectId&&main.querySelector('#active-offer')){
       main.querySelector('.project-picker').outerHTML=picker();
       main.querySelector('.selected-project-tools').innerHTML=projectCompareButton();
-      mounted.sync(language,currency,unitChoice[projectId]);
+      mounted.sync(language,currency,unitChoice[projectId],unknownLayout?null:route.layout);
     }else{
       mounted?.dispose();mounted=null;
       main.innerHTML=page==='projects'?projectView():page==='compare'?`<div class="comparison">${comparison()}</div>`:catalogView();
       if(page==='projects'){
-        mounted=window.mountLocalOffer({host:document.getElementById('active-offer'),offer:active,language,currency,unitId:unitChoice[projectId],onCurrency:code=>{const position={top:window.scrollY,left:window.scrollX,behavior:"instant"};currency=code;persist();render();mounted.root.querySelector(`.unit-price-currency [data-currency-choice="${code}"]`)?.focus({preventScroll:true});mounted.root.querySelector("#unit-summary").getBoundingClientRect();window.scrollTo(position);},onUnit:(id,meta)=>{unitChoice[projectId]=id;persist();if(meta?.userInitiated)history.replaceState(null,'','#project='+encodeURIComponent(projectId)+'&unit='+encodeURIComponent(id));window.OfferContact?.unit(id);}});mounted.id=projectId;
+        mounted=window.mountLocalOffer({
+          host:document.getElementById('active-offer'),offer:active,language,currency,
+          unitId:unitChoice[projectId],layoutId:unknownLayout?null:route.layout,
+          onCurrency:code=>{
+            const position={top:window.scrollY,left:window.scrollX,behavior:'instant'};
+            currency=code;persist();render();
+            mounted.root.querySelector(`.unit-price-currency [data-currency-choice="${code}"]`)?.focus({preventScroll:true});
+            mounted.root.querySelector('#unit-summary').getBoundingClientRect();
+            window.scrollTo(position);
+          },
+          onUnit:(id,meta)=>{
+            unitChoice[projectId]=id;persist();
+            if(meta?.userInitiated)history.replaceState(null,'','#project='+encodeURIComponent(projectId)+'&unit='+encodeURIComponent(id));
+            window.OfferContact?.unit(id);
+          },
+          onLayout:id=>history.replaceState(null,'','#project='+encodeURIComponent(projectId)+'&layout='+encodeURIComponent(id))
+        });
+        mounted.id=projectId;
       }
     }
     bar.hidden=page==='home';bar.setAttribute('aria-label',t('selection'));
     bar.innerHTML=`<div class="selection-text"><strong>${t('projects')}: ${selected.size}</strong><span>${memoryOnly?(language==='ru'?'В текущей вкладке':'In this tab'):t('selectionHint')}</span></div><div class="bar-actions"><button class="button contact-trigger" type="button" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog"><span class="contact-desktop-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span><span class="contact-mobile-label">${language==='ru'?'Задать вопрос':'Ask a question'}</span></button>${selected.size?`<button class="text-button" data-clear>${t('clear')}</button>`:''}<a class="button primary" data-compare href="#compare">${t('compare')} · ${selected.size}</a></div>`;
-    const notice=document.getElementById('storage-notice');notice.textContent=unknownProject?t('unknownProject'):unknownUnit?(language==='ru'?'Квартира по этой ссылке не найдена. Проверьте номер или выберите квартиру ниже.':'The apartment in this link was not found. Check the number or choose an apartment below.'):memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');notice.classList.toggle('warning',memoryOnly||invalidSaved||unknownProject||unknownUnit);
+    const notice=document.getElementById('storage-notice');
+    notice.textContent=unknownProject?t('unknownProject'):unknownLayout?t('unknownLayout'):unknownUnit?(language==='ru'?'Квартира по этой ссылке не найдена. Проверьте номер или выберите квартиру ниже.':'The apartment in this link was not found. Check the number or choose an apartment below.'):memoryOnly?t('storage'):invalidSaved?t('invalid'):t('saved');
+    notice.classList.toggle('warning',memoryOnly||invalidSaved||unknownProject||unknownUnit||unknownLayout);
     const sourceNote=document.getElementById('source-note');
     if(page==='projects'&&isOverview(active)){
       sourceNote.textContent=active.data.priceGuide
@@ -200,6 +277,10 @@
     window.OfferAnalytics?.view({page,project_id:page==='catalog'?'catalog':projectId,unit_id:page==='projects'?(unitChoice[projectId]||active.data.units[0]?.id||''):'',title:page==='projects'?projectName(active)+' · Project':page==='catalog'?'All projects':'Project comparison',language});
     window.OfferAnalytics?.observe(page==='projects'?mounted.root:null);
     syncContact(page);
+    if(addedProject){
+      window.OfferAnalytics?.event('comparison_change',{project_id:addedProject,section_id:'comparison',action:'add',comparison_count:selected.size});
+      announce('added');
+    }
     if(pendingCompareSelection){
       const action=pendingCompareSelection;pendingCompareSelection=null;
       if(page==='projects'&&action.project_id===projectId&&action.unit_id===unitChoice[projectId]){
@@ -223,6 +304,9 @@
     else if(b.hasAttribute('data-clear')){if(selected.size)window.OfferAnalytics?.event('comparison_change',{project_id:'comparison',section_id:'comparison',action:'clear',comparison_count:selected.size});selected.clear();persist();render();announce('cleared');}
   });
   main.addEventListener('toggle',event=>{if(event.target.matches('details.project-picker')&&event.target.isConnected){pickerOpen=event.target.open;}},true);
-  window.addEventListener('hashchange',()=>{render();if(projectRoute().unit)focusRouteUnit();else{main.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}});
-  readSaved();render();focusRouteUnit();
+  window.addEventListener('hashchange',()=>{
+    render();
+    if(!focusRouteChoice()){main.focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
+  });
+  readSaved();render();focusRouteChoice();
 })();

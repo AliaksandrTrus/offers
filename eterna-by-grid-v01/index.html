@@ -240,6 +240,8 @@
     overview.querySelectorAll('[data-language]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.language===language)));
     const back = q('standalone-back'); if(back)back.textContent = t('back');
     const contact = q('standalone-question'); if(contact)contact.textContent = t('question');
+    const compare = q('standalone-compare');
+    if(compare)compare.textContent = language === 'en' ? 'Compare project' : 'Сравнить проект';
     q('viewer-close').setAttribute('aria-label',t('close'));q('viewer-plus').setAttribute('aria-label',t('zoomIn'));q('viewer-minus').setAttribute('aria-label',t('zoomOut'));q('viewer-reset').setAttribute('aria-label',t('reset'));
     q('viewer-prev').setAttribute('aria-label',t('prev'));q('viewer-next').setAttribute('aria-label',t('next'));
     renderPhoto(); renderLayout();
@@ -299,6 +301,7 @@
 })();
 </script>
 <!-- OFFER_CONTACT_START -->
+<style>.standalone-bar{gap:8px}#standalone-compare{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:7px 12px;background:var(--ink);color:var(--white);text-decoration:none;text-align:center;font:inherit;font-size:12px}</style>
 <style>/* Contact controls are part of the existing bar, never a floating obstruction. */
 .contact-trigger{min-width:44px;min-height:44px;background:var(--ink);color:var(--white);border-color:var(--ink);font-size:12px}
 .page{margin-bottom:calc(var(--selection-bar-height,80px) + 30px)}html{scroll-padding-bottom:calc(var(--selection-bar-height,80px) + 16px)}
@@ -312,7 +315,7 @@ body.contact-open{overflow:hidden}body.contact-open .analytics-consent{visibilit
 @media(max-height:460px){.contact-dialog{padding:12px}.contact-note{margin-top:8px}.contact-context{margin-bottom:6px}#contact-description{margin-bottom:10px}}
 
 .selection-bar [data-clear]{min-height:44px;min-width:44px}
-</style><aside id="selection-bar" class="standalone-bar"><button type="button" id="standalone-question" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog">Задать вопрос</button></aside>
+</style><aside id="selection-bar" class="standalone-bar"><button type="button" id="standalone-question" data-contact-open aria-haspopup="dialog" aria-controls="contact-dialog">Задать вопрос</button><a id="standalone-compare" href="../unified/#compare?add=eterna-by-grid">Сравнить проект</a></aside>
 <script>// Accepted contact component with project-level best-view intent. Contact links work without analytics consent; never send messages.
 (() => {
   'use strict';

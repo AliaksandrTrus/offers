@@ -1856,6 +1856,8 @@ window.OFFER_RENDERERS["eterna-by-grid"]=function(document,window){
     overview.querySelectorAll('[data-language]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.language===language)));
     const back = q('standalone-back'); if(back)back.textContent = t('back');
     const contact = q('standalone-question'); if(contact)contact.textContent = t('question');
+    const compare = q('standalone-compare');
+    if(compare)compare.textContent = language === 'en' ? 'Compare project' : 'Сравнить проект';
     q('viewer-close').setAttribute('aria-label',t('close'));q('viewer-plus').setAttribute('aria-label',t('zoomIn'));q('viewer-minus').setAttribute('aria-label',t('zoomOut'));q('viewer-reset').setAttribute('aria-label',t('reset'));
     q('viewer-prev').setAttribute('aria-label',t('prev'));q('viewer-next').setAttribute('aria-label',t('next'));
     renderPhoto(); renderLayout();
