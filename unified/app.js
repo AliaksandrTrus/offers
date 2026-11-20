@@ -30,11 +30,11 @@
   const catalogDistrictNames=new Map(districtNames);
   for(const d of window.DISTRICT_OVERVIEWS||[])if(d.districtKey&&!catalogDistrictNames.has(d.districtKey))catalogDistrictNames.set(d.districtKey,{ru:d.name,en:d.name});
   district=districtKey(offers[0]);
-  function money(amount,code=currency){
+  function money(amount){
     if(typeof amount!=='number'||!Number.isFinite(amount))return escape(t('missing'));
-    const value=code==='USD'?Math.round(Math.round(amount*100)/366):amount;
-    const formatted=new Intl.NumberFormat(language==='ru'?'ru-RU':'en-US',{minimumFractionDigits:0,maximumFractionDigits:code==='USD'?0:2}).format(value);
-    return `<span class="money" data-aed="${amount}" data-currency-value="${code}">${escape(formatted)} <small>${code}</small></span>`;
+    const value=currency==='USD'?Math.round(Math.round(amount*100)/366):amount;
+    const formatted=new Intl.NumberFormat(language==='ru'?'ru-RU':'en-US',{minimumFractionDigits:0,maximumFractionDigits:currency==='USD'?0:2}).format(value);
+    return `<span class="money" data-aed="${amount}" data-currency-value="${currency}">${escape(formatted)} <small>${currency}</small></span>`;
   }
   function rich(value){if(Array.isArray(value))return value.map(p=>Object.hasOwn(p,'amount')?money(p.amount):escape(local(p.text??p))).join('');return escape(local(value));}
   function readSaved(){
@@ -83,12 +83,12 @@
   const compareMedia=window.matchMedia('(max-width:760px)');
   const categories=[['minimum_price','Минимальная цена','Minimum price'],['value_per_m2','Выгодный метр','Best area value'],['premium','Премиум','Premium']];
   const categoryName=key=>{const c=categories.find(x=>x[0]===key);return c?.[language==='ru'?1:2]||t('missing');};
-  function metricValue(price,sqft,m2,code=currency){
+  function metricValue(price,sqft,m2){
     const valid=Number.isFinite(sqft)&&sqft>0&&Number.isFinite(m2)&&m2>0&&Number.isFinite(price);
     if(!valid)return {area:t('missing'),rate:t('missing')};
     const fmt=n=>new Intl.NumberFormat(language==='ru'?'ru-RU':'en-GB',{minimumFractionDigits:1,maximumFractionDigits:1}).format(n);
-    const unit=code==='AED'?'sq ft':language==='ru'?'м²':'m²';
-    return {area:fmt(code==='AED'?sqft:m2)+' '+unit,rate:fmt(code==='AED'?price/sqft:price/3.66/m2)+' '+code+'/'+unit};
+    const unit=currency==='AED'?'sq ft':language==='ru'?'м²':'m²';
+    return {area:fmt(currency==='AED'?sqft:m2)+' '+unit,rate:fmt(currency==='AED'?price/sqft:price/3.66/m2)+' '+currency+'/'+unit};
   }
   function compactPlan(u,o){
     const p=u.payments,s=p?.stages;
@@ -128,16 +128,15 @@
     return lines;
   }
   function startingPrices(offer,columns,rows){
-    const codes=currency==='AED'?['AED','USD']:['USD','AED'];
     return `<td colspan="${columns}" rowspan="${rows}" class="matrix-starting" data-starting-project="${offer.id}">
       <ul class="matrix-starting-list">${offer.data.layouts.map(layout=>{
-        const metrics=codes.map(code=>metricValue(layout.startingPriceAed,layout.totalSqft,layout.totalM2,code));
+        const metric=metricValue(layout.startingPriceAed,layout.totalSqft,layout.totalM2);
         const href='#project='+encodeURIComponent(offer.id)+'&layout='+encodeURIComponent(layout.id);
         return `<li><a class="matrix-starting-link" href="${escape(href)}" data-compare-layout="${escape(layout.id)}" title="${t('openLayout')}">
           <strong>${escape(local(layout.title))}</strong>
-          ${codes.map(code=>`<span class="matrix-starting-money"><small>${t('from')}</small>${money(layout.startingPriceAed,code)}</span>`).join('')}
-        </a><span class="matrix-area">${escape(metrics[0].area)}</span>
-        ${metrics.map(m=>`<span class="matrix-rate">${escape(m.rate)}</span>`).join('')}</li>`;
+          <span class="matrix-starting-money"><small>${t('from')}</small> ${money(layout.startingPriceAed)}</span>
+        </a><span class="matrix-area">${escape(metric.area)}</span>
+        <span class="matrix-rate">${escape(metric.rate)}</span></li>`;
       }).join('')}</ul>
     </td>`;
   }

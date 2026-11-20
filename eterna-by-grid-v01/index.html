@@ -16,9 +16,15 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.priced-overview .layout-secondary {
-  font-size: 12px;
-  opacity: 1;
+.priced-overview .header-controls {
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.overview-preferences {
+  display: flex;
+  gap: 4px;
 }
 
 .priced-overview .layout-detail {
@@ -80,6 +86,10 @@
 }
 
 @media (max-width: 760px) {
+  .priced-overview .project-header {
+    flex-wrap: wrap;
+  }
+
   .priced-overview .layout-options,
   .priced-overview .layout-detail {
     grid-template-columns: 1fr;
@@ -95,12 +105,10 @@
   }
 
   .priced-overview .layout-name {
-    grid-row: span 2;
     font-size: 13px;
   }
 
-  .priced-overview .layout-size,
-  .priced-overview .layout-secondary {
+  .priced-overview .layout-size {
     grid-column: 2;
     text-align: right;
   }
@@ -114,7 +122,7 @@
 </style></head><body>
 <main id="overview" class="page priced-overview" hidden>
 <a id="standalone-back" class="standalone-back" href="../unified/#projects">← Все проекты</a>
-<header class="project-header"><div><h1 id="project-name"></h1><p class="location" id="project-location"></p></div><div class="header-controls" role="group" aria-label="Language / Язык"><button type="button" class="language-button" data-language="ru" aria-pressed="true" aria-label="Русский">RU</button><button type="button" class="language-button" data-language="en" aria-pressed="false" aria-label="English">EN</button></div></header>
+<header class="project-header"><div><h1 id="project-name"></h1><p class="location" id="project-location"></p></div><div class="header-controls"><div class="overview-preferences" role="group" aria-label="Language / Язык"><button type="button" class="language-button" data-language="ru" aria-pressed="true" aria-label="Русский">RU</button><button type="button" class="language-button" data-language="en" aria-pressed="false" aria-label="English">EN</button></div><div class="overview-preferences" id="overview-currency" role="group" aria-label="Валюта"><button type="button" class="language-button" data-currency-choice="AED" aria-pressed="true">AED</button><button type="button" class="language-button" data-currency-choice="USD" aria-pressed="false">USD</button></div></div></header>
 <div class="project-overview-grid"><section class="gallery" data-section="photos"><div class="visual-wrap"><button type="button" class="visual-open" id="gallery-open"><img id="gallery-image" alt="" width="1482" height="836"><span class="expand-mark" aria-hidden="true">↗</span></button><button type="button" class="photo-arrow photo-prev" id="photo-prev">‹</button><button type="button" class="photo-arrow photo-next" id="photo-next">›</button></div><div class="photo-caption"><span id="gallery-caption"></span><span id="gallery-count" class="num"></span></div><div class="thumbs" id="thumbs"></div></section><aside class="project-aside project-copy" data-section="description"><h2 id="about-title"></h2><div class="project-counts" id="project-counts"></div><p id="project-description"></p><ul class="amenities" id="amenities"></ul></aside></div>
 <section id="apartments" class="detail-section" data-section="apartments"><div class="section-head"><h2 id="layouts-title"></h2><p id="layouts-intro" class="section-sub"></p></div><div class="layout-options" id="layout-options" role="group" aria-label="Форматы"></div><div class="layout-detail"><section id="layout-summary" class="layout-summary" aria-live="polite"></section><div class="plans-grid"><figure class="plan-card"><button type="button" class="plan-canvas" id="unit-open"><img id="unit-plan" alt="" width="1218" height="920"><span class="plan-zoom-label" id="unit-zoom-label"></span></button><figcaption id="unit-caption"></figcaption></figure><figure class="plan-card"><button type="button" class="plan-canvas" id="floor-open"><img id="floor-plan" alt="" width="2382" height="1684"><span class="plan-zoom-label" id="floor-zoom-label"></span></button><figcaption id="floor-caption"></figcaption></figure></div></div><p class="position-note" id="position-note"></p></section>
 <section id="overview-payments" class="overview-payments" data-section="payments"></section>
@@ -130,16 +138,29 @@
   const overview = document.getElementById('overview');
   const q = id => document.getElementById(id);
   const escape = value => String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  let language = 'ru', photoIndex = 0, selected = data.layouts[0].id;
+  let language = 'ru', currency = 'AED', photoIndex = 0, selected = data.layouts[0].id;
+  const priceGuide = data.priceGuide;
+  const standalone = Boolean(document.querySelector('meta[name="offer-surface"][content="standalone"]'));
   const storageKey = 'personal-offers:project-layout:' + data.contact.projectId + ':v1';
+  const preferencesKey = 'personal-offers:unified:v1';
   try { const saved = window.localStorage.getItem(storageKey); if (data.layouts.some(x => x.id === saved)) selected = saved; } catch {}
+  if(priceGuide&&standalone){
+    try {
+      const saved=JSON.parse(window.localStorage.getItem(preferencesKey)??'null');
+      if(saved?.version===2&&saved.currency==='USD')currency='USD';
+    } catch {}
+  }
   const local = value => typeof value === 'string' ? value : value?.[language] || '';
   const number = value => new Intl.NumberFormat(language === 'ru' ? 'ru-RU' : 'en-GB',{minimumFractionDigits:1,maximumFractionDigits:1}).format(value);
-  const area = (sqft,m2) => number(sqft) + ' sq ft · ' + number(m2) + (language === 'ru' ? ' м²' : ' m²');
+  function area(sqft,m2){
+    const feet = number(sqft) + ' sq ft';
+    const metres = number(m2) + (language === 'ru' ? ' м²' : ' m²');
+    if(!priceGuide)return feet+' · '+metres;
+    return currency==='AED'?feet:metres;
+  }
   const current = () => data.layouts.find(x => x.id === selected);
-  const priceGuide = data.priceGuide;
   const usdRate = 3.66;
-  function money(amount, currency) {
+  function money(amount) {
     const value = currency === 'USD' ? Math.round(amount / usdRate) : amount;
     return new Intl.NumberFormat(language === 'ru' ? 'ru-RU' : 'en-GB', {
       maximumFractionDigits: currency === 'USD' ? 0 : 2
@@ -161,6 +182,27 @@
   let opener = null, modalKind = '', scale = 1, panX = 0, panY = 0, drag = null, pinch = null;
   const pointers = new Map(), viewer = q('viewer'), stage = q('viewer-stage');
 
+  function syncCurrencyButtons(){
+    q('overview-currency')?.setAttribute('aria-label',language==='ru'?'Валюта':'Currency');
+    overview.querySelectorAll('[data-currency-choice]').forEach(button=>{
+      button.setAttribute('aria-pressed',String(button.dataset.currencyChoice===currency));
+    });
+  }
+  function selectCurrency(code){
+    if(!priceGuide||code===currency||(code!=='AED'&&code!=='USD'))return;
+    currency=code;
+    if(standalone){
+      try {
+        const saved=JSON.parse(window.localStorage.getItem(preferencesKey)??'null');
+        if(saved===null||(saved.version===2&&Array.isArray(saved.selected))){
+          window.localStorage.setItem(preferencesKey,JSON.stringify({version:2,selected:[],...saved,currency}));
+        }
+      } catch {}
+    }
+    syncCurrencyButtons();
+    renderLayout();
+  }
+
   function layoutTitle(item) { return item.title ? local(item.title) : item.bedrooms + ' · ' + category(item); }
   function renderPhoto() {
     const item = data.gallery[photoIndex];
@@ -174,19 +216,20 @@
     const item = current();
     q('layout-options').innerHTML = data.layouts.map(x => {
       const prices = priceGuide
-        ? `<span class="layout-size num" data-price-currency="AED">${p('from')} ${money(x.startingPriceAed,'AED')}</span><span class="layout-secondary num" data-price-currency="USD">${p('from')} ${money(x.startingPriceAed,'USD')}</span>`
+        ? `<span class="layout-size num" data-price-currency="${currency}">${p('from')} ${money(x.startingPriceAed)}</span>`
         : `<span class="layout-size num">${number(x.totalSqft)} <small>sq ft</small></span><span class="layout-secondary num">${number(x.totalM2)} ${language==='ru'?'м²':'m²'}</span>`;
       return `<button type="button" class="layout-option unit-option" data-layout="${x.id}" aria-pressed="${x.id===selected}"><span class="layout-name">${escape(layoutTitle(x))}</span>${prices}</button>`;
     }).join('');
     const fact = (label,sqft,m2) => `<div><small>${label}</small><strong class="num">${number(sqft)} sq ft</strong><strong class="secondary num">${number(m2)} ${language==='ru'?'м²':'m²'}</strong></div>`;
     if (priceGuide) {
-      const aedRate = item.startingPriceAed / item.totalSqft;
-      const usdPerM2 = item.startingPriceAed / (usdRate * item.totalM2);
+      const metric=currency==='USD';
+      const rate=item.startingPriceAed/(metric?usdRate*item.totalM2:item.totalSqft);
+      const rateUnit=metric?(language==='ru'?'USD/м²':'USD/m²'):'AED/ft²';
       const floors = item.floors[0] + '–' + item.floors.at(-1);
       q('layout-summary').innerHTML = `<h3>${escape(layoutTitle(item))}</h3>
         <div class="layout-facts">
-          ${fact(p('typical'),item.totalSqft,item.totalM2)}
-          <div><small>${p('rate')}</small><strong class="num">${number(aedRate)} AED/ft²</strong><strong class="secondary num">${number(usdPerM2)} USD/${language==='ru'?'м²':'m²'}</strong></div>
+          <div><small>${p('typical')}</small><strong class="num">${area(item.totalSqft,item.totalM2)}</strong></div>
+          <div><small>${p('rate')}</small><strong class="num">${number(rate)} ${rateUnit}</strong></div>
         </div>
         <p class="layout-description">${p('example')} · ${t('floors').toLowerCase()} ${floors}</p>`;
       renderPayments(item);
@@ -216,7 +259,7 @@
         <summary>${p('amounts')} · ${escape(layoutTitle(item))}</summary>
         <dl class="payment-amounts">${stages.map(stage => {
           const amount = item.startingPriceAed * stage.share / 100;
-          return `<div><dt>${escape(local(stage.title))}</dt><dd class="num">${money(amount,'AED')}<br>${money(amount,'USD')}</dd></div>`;
+          return `<div><dt>${escape(local(stage.title))}</dt><dd class="num">${money(amount)}</dd></div>`;
         }).join('')}</dl>
       </details>`;
   }
@@ -238,6 +281,7 @@
     const frame = q('project-map'); if (frame.getAttribute('src') !== data.map.embedUrl) frame.src = data.map.embedUrl;
     frame.title = t('location')+' · '+data.project.name;
     overview.querySelectorAll('[data-language]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.language===language)));
+    syncCurrencyButtons();
     const back = q('standalone-back'); if(back)back.textContent = t('back');
     const contact = q('standalone-question'); if(contact)contact.textContent = t('question');
     const compare = q('standalone-compare');
@@ -273,6 +317,7 @@
   overview.addEventListener('click',e=>{
     const b=e.target.closest('button');if(!b)return;
     if(b.dataset.language){language=b.dataset.language;render();}
+    else if(b.dataset.currencyChoice)selectCurrency(b.dataset.currencyChoice);
     else if(b.dataset.layout){if(selected!==b.dataset.layout){selected=b.dataset.layout;try{window.localStorage.setItem(storageKey,selected);}catch{}renderLayout();}q('layout-options').querySelector(`[data-layout="${selected}"]`)?.focus({preventScroll:true});}
     else if(b.hasAttribute('data-photo'))changePhoto(Number(b.dataset.photo));
     else if(b.id==='photo-prev')changePhoto(photoIndex-1);

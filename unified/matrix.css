@@ -25,7 +25,6 @@ body[data-screen="compare"] .storage-notice:not(.warning){display:none}
 .matrix-starting-list li+li{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
 .matrix-starting-link{display:block;min-height:44px;color:var(--ink);font-weight:500;text-underline-offset:2px}
 .matrix-starting-link strong{display:block;font-size:12px;margin-bottom:3px}
-.matrix-starting-money,.matrix-starting-money .money{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:.3em}
 .matrix-starting-money{font-size:13px;line-height:1.35}
 .matrix-starting-money small{font-size:.78em}
 .matrix-starting .matrix-area{margin-top:3px}
